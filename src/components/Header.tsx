@@ -8,9 +8,6 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary-hover shadow-sm">
-              <img src="/logo.svg" alt="Gigm8" className="h-6 w-auto" />
-            </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight text-foreground">Gigm8</h1>
               <p className="text-sm text-muted-foreground">Jobs • Matching • AI Resume Builder</p>
