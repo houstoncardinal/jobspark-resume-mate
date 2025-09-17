@@ -116,64 +116,35 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Match a Job. Optimize Your Resume. Apply with Confidence.
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-              Choose a job, upload or paste your resume, get instant match analytics and AI-powered edits.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`p-4 rounded-lg border transition-all ${step1Done ? 'border-success bg-success/10' : 'border-dashed border-muted-foreground/30'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step1Done ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {step1Done ? <CheckCircle2 className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
-                </div>
-                <div>
-                  <div className="font-medium">1. Select a Job</div>
-                  <div className="text-xs text-muted-foreground">Find the role you want to target</div>
-                </div>
-              </div>
-              <div className="mt-3">
-                <Button size="sm" variant="outline" onClick={() => { setActiveTab('search'); const el = document.getElementById('job-search'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Go to Job Search</Button>
+        <section className="mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+                Find Great Jobs. Perfect Your Resume.
+              </h1>
+              <p className="text-muted-foreground text-base md:text-lg mb-6 max-w-xl">
+                Gigm8 brings together high-quality job listings with an AI resume toolkit so you can search, match, and optimize in one place.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => { setActiveTab('search'); const el = document.getElementById('job-search'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                  <SearchIcon className="h-4 w-4 mr-2" /> Start Searching
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('optimize')}>
+                  <Sparkles className="h-4 w-4 mr-2" /> Optimize Resume
+                </Button>
               </div>
             </div>
-
-            <div className={`p-4 rounded-lg border transition-all ${step2Done ? 'border-success bg-success/10' : 'border-dashed border-muted-foreground/30'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step2Done ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {step2Done ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
-                </div>
-                <div>
-                  <div className="font-medium">2. Upload or Paste Resume</div>
-                  <div className="text-xs text-muted-foreground">Provide your latest resume text or file</div>
-                </div>
-              </div>
-              <div className="mt-3">
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('resume')}>Go to Upload</Button>
-              </div>
-            </div>
-
-            <div className={`p-4 rounded-lg border transition-all ${step3Ready ? 'border-primary bg-primary/10' : 'border-dashed border-muted-foreground/30'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step3Ready ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="font-medium">3. Analyze & Optimize</div>
-                  <div className="text-xs text-muted-foreground">See match scores and apply AI edits in real time</div>
-                </div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={() => setActiveTab('match')} disabled={!step3Ready}>Open Match Analysis</Button>
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('optimize')} disabled={!step3Ready}>Open Resume Builder</Button>
+            <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/5 to-accent/10">
+              <div className="text-sm text-muted-foreground mb-2">Tools</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="secondary" className="justify-start" onClick={() => setActiveTab('search')}><SearchIcon className="h-4 w-4 mr-2" /> Job Search</Button>
+                <Button variant="secondary" className="justify-start" onClick={() => setActiveTab('resume')}><FileText className="h-4 w-4 mr-2" /> Resume Upload</Button>
+                <Button variant="secondary" className="justify-start" disabled={!(uploadedResume || resumeText) || !selectedJob} onClick={() => setActiveTab('match')}><CheckCircle2 className="h-4 w-4 mr-2" /> Match Analysis</Button>
+                <Button variant="secondary" className="justify-start" disabled={!(uploadedResume || resumeText) || !selectedJob} onClick={() => setActiveTab('optimize')}><Sparkles className="h-4 w-4 mr-2" /> Resume Optimizer</Button>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <Tabs id="job-search" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-8 flex gap-2 overflow-x-auto no-scrollbar">
