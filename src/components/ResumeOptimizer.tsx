@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Wand2, Download, Eye, RefreshCw, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Wand2, Download, Eye, RefreshCw, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { computeMatch, extractJobKeywords } from "@/lib/match";
 
 interface ResumeOptimizerProps {
   resume: File | null;
@@ -18,10 +19,25 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
   const [optimizationProgress, setOptimizationProgress] = useState(0);
   const [optimizedContent, setOptimizedContent] = useState("");
   const [hasOptimized, setHasOptimized] = useState(false);
+  const [resumeText, setResumeText] = useState("");
+  const [recommended, setRecommended] = useState<string[]>([]);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const handler = (e: any) => {
+      const text = e?.detail?.text || "";
+      setResumeText(text);
+      if (selectedJob) {
+        const match = computeMatch(text, selectedJob);
+        setRecommended(match.recommendedKeywords.slice(0, 12));
+      }
+    };
+    window.addEventListener("resume-text-updated", handler as any);
+    return () => window.removeEventListener("resume-text-updated", handler as any);
+  }, [selectedJob]);
+
   const handleOptimize = async () => {
-    if (!resume || !selectedJob) return;
+    if ((!resume && !resumeText) || !selectedJob) return;
     
     setIsOptimizing(true);
     setOptimizationProgress(0);
@@ -41,44 +57,9 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
       setOptimizationProgress((i / steps.length) * 100);
     }
     
-    // Mock optimized content with job-specific keywords
-    const jobKeywords = selectedJob.requirements?.join(', ') || "React, TypeScript, JavaScript";
-    const mockOptimizedContent = `SENIOR FRONTEND DEVELOPER
-
-PROFESSIONAL SUMMARY
-Results-driven Senior Frontend Developer with 5+ years of experience in ${jobKeywords}. Proven track record of delivering high-performance web applications using ${selectedJob.requirements?.[0] || 'React'}, ${selectedJob.requirements?.[1] || 'TypeScript'}, and ${selectedJob.requirements?.[2] || 'modern web technologies'}. Expert in agile development methodologies with strong focus on user experience and scalable architecture.
-
-TECHNICAL SKILLS
-• Frontend: ${selectedJob.requirements?.slice(0, 4).join(', ') || 'React, TypeScript, Next.js, JavaScript (ES6+)'}
-• Styling: Tailwind CSS, CSS3, Sass, Styled Components  
-• State Management: Redux, Context API, Zustand
-• APIs: GraphQL, REST, Apollo Client
-• Tools: Git, Webpack, Vite, Docker
-• Testing: Jest, React Testing Library, Cypress
-
-PROFESSIONAL EXPERIENCE
-
-Senior Frontend Developer | ${selectedJob.company} | 2021 - Present
-• Developed and maintained 15+ ${selectedJob.requirements?.[0] || 'React'} applications serving 100K+ daily active users
-• Implemented ${selectedJob.requirements?.[1] || 'TypeScript'} across all projects, reducing bugs by 40%
-• Built responsive interfaces using ${selectedJob.requirements?.[3] || 'CSS'}, improving mobile engagement by 35%
-• Integrated ${selectedJob.requirements?.[4] || 'REST'} APIs, reducing data fetching time by 50%
-• Collaborated in agile development sprints, consistently delivering features on time
-
-Frontend Developer | TechCorp Solutions | 2019 - 2021
-• Created ${selectedJob.requirements?.[0] || 'React'}-based dashboard, improving page load speeds by 60%
-• Developed component library with ${selectedJob.requirements?.[3] || 'CSS frameworks'}, used across 8 different projects
-• Implemented automated testing with Jest, achieving 85% code coverage
-• Worked closely with UX/UI designers to implement pixel-perfect interfaces
-
-EDUCATION
-Bachelor of Science in Computer Science | University of Technology | 2019
-Relevant Coursework: ${selectedJob.requirements?.slice(0, 3).join(', ') || 'Web Development, Software Engineering, Database Design'}
-
-CERTIFICATIONS
-• ${selectedJob.requirements?.[0] || 'React'} Developer Certification
-• ${selectedJob.requirements?.[1] || 'TypeScript'} Advanced Certification
-• Agile Development Practitioner`;
+    // Use keywords from match to seed content
+    const baseKeywords = recommended.length ? recommended : extractJobKeywords(selectedJob, 12);
+    const mockOptimizedContent = `OPTIMIZED RESUME\n\nSUMMARY\nResults-driven professional aligned with ${selectedJob.title} at ${selectedJob.company}. Strong experience across: ${baseKeywords.join(', ')}. Proven impact in shipping production features, collaborating cross-functionally, and improving KPIs.\n\nHARD SKILLS\n• ${baseKeywords.slice(0,4).join('  • ')}\n• ${baseKeywords.slice(4,8).join('  • ')}\n• ${baseKeywords.slice(8,12).join('  • ')}\n\nEXPERIENCE\n${selectedJob.company} — Role Relevant to ${selectedJob.title}\n• Delivered features mapped to ${baseKeywords.slice(0,3).join(', ')} improving user engagement 20%\n• Implemented scalable solutions leveraging ${baseKeywords.slice(3,6).join(', ')}\n• Partnered with stakeholders to prioritize roadmap and ship on schedule\n\nEDUCATION & CERTIFICATIONS\n• Bachelor of Science in Computer Science\n• Certifications in ${baseKeywords.slice(0,2).join(', ')}\n`;
 
     setOptimizedContent(mockOptimizedContent);
     setHasOptimized(true);
@@ -105,10 +86,21 @@ CERTIFICATIONS
     });
   };
 
+  if ((!resume && !resumeText) || !selectedJob) {
+    return (
+      <Alert>
+        <Wand2 className="h-4 w-4" />
+        <AlertDescription>
+          Please upload a resume or paste text and select a job to start optimization.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   const improvements = [
     { 
       type: "Keywords", 
-      count: 8, 
+      count: recommended.length || 8, 
       color: "bg-success text-success-foreground",
       description: "Added job-specific keywords"
     },
@@ -132,17 +124,6 @@ CERTIFICATIONS
     }
   ];
 
-  if (!resume || !selectedJob) {
-    return (
-      <Alert>
-        <Wand2 className="h-4 w-4" />
-        <AlertDescription>
-          Please upload a resume and select a job to start optimization.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -164,7 +145,12 @@ CERTIFICATIONS
                 <p className="text-muted-foreground mb-4">
                   Our AI will analyze your resume and the job requirements to create an optimized version
                 </p>
-                <Button onClick={handleOptimize} size="lg">
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {recommended.map((kw, i) => (
+                    <Badge key={i} variant="secondary">{kw}</Badge>
+                  ))}
+                </div>
+                <Button onClick={handleOptimize} size="lg" className="mt-4">
                   <Wand2 className="mr-2 h-4 w-4" />
                   Optimize Resume
                 </Button>
@@ -227,7 +213,7 @@ CERTIFICATIONS
             <Textarea
               value={optimizedContent}
               onChange={(e) => setOptimizedContent(e.target.value)}
-              className="min-h-[500px] font-mono text-sm"
+              className="min-h[500px] font-mono text-sm"
               placeholder="Optimized resume content will appear here..."
             />
           </CardContent>

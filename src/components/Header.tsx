@@ -1,5 +1,6 @@
 import { Search, FileText, BarChart3, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const Header = () => {
   return (
@@ -31,8 +32,8 @@ export const Header = () => {
             </div>
           </nav>
 
-          <Button variant="default">
-            Get Started
+          <Button asChild variant="default">
+            <Link to="/builder">Resume Builder</Link>
           </Button>
         </div>
       </div>

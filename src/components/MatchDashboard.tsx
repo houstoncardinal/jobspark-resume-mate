@@ -3,44 +3,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, XCircle, Target, Zap, TrendingUp } from "lucide-react";
+import { computeMatch, extractJobKeywords } from "@/lib/match";
+import type { NormalizedJob } from "@/lib/jobs";
+import React from "react";
+import { ResumeAudit } from "@/components/ResumeAudit";
 
 interface MatchDashboardProps {
   resume: File | null;
-  selectedJob: any;
+  selectedJob: NormalizedJob | null;
 }
 
 export const MatchDashboard = ({ resume, selectedJob }: MatchDashboardProps) => {
-  if (!resume || !selectedJob) {
+  const [resumeText, setResumeText] = React.useState<string>("");
+  const [match, setMatch] = React.useState<ReturnType<typeof computeMatch> | null>(null);
+
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      const text = e?.detail?.text || "";
+      setResumeText(text);
+    };
+    window.addEventListener("resume-text-updated", handler as any);
+    return () => window.removeEventListener("resume-text-updated", handler as any);
+  }, []);
+
+  React.useEffect(() => {
+    if (!selectedJob) return;
+    const text = resumeText || "";
+    if (text.trim()) {
+      const m = computeMatch(text, selectedJob);
+      setMatch(m);
+    } else {
+      setMatch(null);
+    }
+  }, [resumeText, selectedJob]);
+
+  if ((!resume && !resumeText) || !selectedJob) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Please upload a resume and select a job to see the match analysis.
+          Please upload a resume or paste text and select a job to see the match analysis.
         </AlertDescription>
       </Alert>
     );
   }
 
-  const matchScore = selectedJob.matchScore || 0;
-  const skillsMatch = [
-    { skill: "React", match: true, level: "Expert" },
-    { skill: "TypeScript", match: true, level: "Advanced" },
-    { skill: "Next.js", match: false, level: "None" },
-    { skill: "Tailwind CSS", match: true, level: "Intermediate" },
-    { skill: "GraphQL", match: false, level: "None" },
-  ];
-
-  const improvements = [
-    { type: "missing", text: "Add Next.js experience to increase match by +8%" },
-    { type: "enhance", text: "Highlight GraphQL projects to boost technical score" },
-    { type: "keywords", text: "Include 'agile development' keyword for ATS optimization" },
-  ];
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-success";
-    if (score >= 60) return "text-warning";
-    return "text-destructive";
-  };
+  const defaultKeywords = selectedJob ? extractJobKeywords(selectedJob, 12) : [];
 
   return (
     <div className="space-y-6">
@@ -57,23 +65,23 @@ export const MatchDashboard = ({ resume, selectedJob }: MatchDashboardProps) => 
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className={`text-4xl font-bold ${getScoreColor(matchScore)} mb-2`}>
-                {matchScore}%
+              <div className={`text-4xl font-bold ${match ? (match.overallMatchPercent >= 80 ? 'text-success' : match.overallMatchPercent >= 60 ? 'text-warning' : 'text-destructive') : 'text-muted-foreground'} mb-2`}>
+                {match ? `${match.overallMatchPercent}%` : '--'}
               </div>
               <div className="text-sm text-muted-foreground mb-4">Overall Match</div>
-              <Progress value={matchScore} className="w-full" />
+              <Progress value={match ? match.overallMatchPercent : 0} className="w-full" />
             </div>
             
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">92%</div>
+              <div className="text-4xl font-bold text-primary mb-2">{match ? `${match.atsCompatibilityPercent}%` : '--'}</div>
               <div className="text-sm text-muted-foreground mb-4">ATS Compatibility</div>
-              <Progress value={92} className="w-full" />
+              <Progress value={match ? match.atsCompatibilityPercent : 0} className="w-full" />
             </div>
             
             <div className="text-center">
-              <div className="text-4xl font-bold text-accent mb-2">76%</div>
+              <div className="text-4xl font-bold text-accent mb-2">{match ? `${match.keywordsMatchPercent}%` : '--'}</div>
               <div className="text-sm text-muted-foreground mb-4">Keywords Match</div>
-              <Progress value={76} className="w-full" />
+              <Progress value={match ? match.keywordsMatchPercent : 0} className="w-full" />
             </div>
           </div>
         </CardContent>
@@ -84,25 +92,23 @@ export const MatchDashboard = ({ resume, selectedJob }: MatchDashboardProps) => 
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
-              Skills Analysis
+              Keywords
             </CardTitle>
+            <CardDescription>Top terms from the job and your coverage</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {skillsMatch.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-3">
-                  {item.match ? (
-                    <CheckCircle className="h-5 w-5 text-success" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-destructive" />
-                  )}
-                  <span className="font-medium">{item.skill}</span>
-                </div>
-                <Badge variant={item.match ? "default" : "destructive"}>
-                  {item.level}
-                </Badge>
+            <div className="flex flex-wrap gap-2">
+              {(match ? match.matchedKeywords.slice(0, 20) : defaultKeywords.slice(0, 10)).map((kw, i) => (
+                <Badge key={i} className="bg-success text-success-foreground">{kw}</Badge>
+              ))}
+            </div>
+            {match && (
+              <div className="flex flex-wrap gap-2">
+                {match.missingKeywords.slice(0, 20).map((kw, i) => (
+                  <Badge key={i} variant="secondary">{kw}</Badge>
+                ))}
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
@@ -114,48 +120,28 @@ export const MatchDashboard = ({ resume, selectedJob }: MatchDashboardProps) => 
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {improvements.map((item, index) => (
-              <Alert key={index}>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{item.text}</AlertDescription>
-              </Alert>
-            ))}
+            {match ? (
+              match.recommendedKeywords.slice(0, 8).map((kw, index) => (
+                <Alert key={index}>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>Add "{kw}" to boost keyword match</AlertDescription>
+                </Alert>
+              ))
+            ) : (
+              defaultKeywords.slice(0, 6).map((kw, index) => (
+                <Alert key={index}>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>Ensure your resume mentions "{kw}"</AlertDescription>
+                </Alert>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Job Requirements vs Your Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Required Experience: 5+ years</h4>
-              <div className="flex items-center gap-2">
-                <Progress value={85} className="flex-1" />
-                <span className="text-sm text-muted-foreground">4.2 years (85% match)</span>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Technical Skills: React, TypeScript</h4>
-              <div className="flex items-center gap-2">
-                <Progress value={90} className="flex-1" />
-                <span className="text-sm text-muted-foreground">Strong match (90%)</span>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Industry Experience: SaaS/Tech</h4>
-              <div className="flex items-center gap-2">
-                <Progress value={100} className="flex-1" />
-                <span className="text-sm text-muted-foreground">Perfect match (100%)</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {resumeText && selectedJob && (
+        <ResumeAudit resumeText={resumeText} job={selectedJob} />
+      )}
     </div>
   );
 };
