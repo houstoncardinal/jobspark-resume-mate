@@ -62,6 +62,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
   const [perSourceLimit, setPerSourceLimit] = useState<number>(30);
 
   const [progress, setProgress] = useState<{ completed: number; total: number; last?: { source: string; count: number } } | null>(null);
+  const [includeWorldwideRemote, setIncludeWorldwideRemote] = useState(true);
 
   const detectGeolocation = async () => {
     if (!navigator.geolocation) {
@@ -105,6 +106,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
         sources: selectedSources as any,
         perSourceLimit,
         onProgress: ({ completed, total, source, count }) => setProgress({ completed, total, last: { source, count } }),
+        includeWorldwideRemote,
       });
       setJobs(results);
       setPage(1);
@@ -135,6 +137,11 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
     setDetailsJob(job);
     setDetailsOpen(true);
   };
+
+  const perSourceSummary = jobs.reduce<Record<string, number>>((acc, j) => {
+    acc[j.source] = (acc[j.source] || 0) + 1;
+    return acc;
+  }, {});
 
   const totalPages = Math.max(1, Math.ceil(jobs.length / PAGE_SIZE));
   const startIndex = (page - 1) * PAGE_SIZE;
@@ -233,6 +240,10 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
                     <span className="text-muted-foreground text-xs">results/source</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <Switch id="include-worldwide" checked={includeWorldwideRemote} onCheckedChange={setIncludeWorldwideRemote} />
+                  <label htmlFor="include-worldwide" className="text-sm text-foreground">Include worldwide "Remote" in region</label>
+                </div>
               </div>
             </div>
           </div>
@@ -260,6 +271,11 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
                 <span>Fetching jobs…</span>
               )}
             </div>
+          </div>
+        )}
+        {!isLoading && jobs.length > 0 && (
+          <div className="text-xs text-muted-foreground px-2">
+            Sources: {Object.entries(perSourceSummary).map(([s,c]) => `${s}: ${c}`).join(' • ')}
           </div>
         )}
         {pageJobs.map((job) => (

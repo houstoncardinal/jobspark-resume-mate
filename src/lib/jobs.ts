@@ -28,6 +28,7 @@ export interface SearchOptions {
   sources?: Array<"remotive" | "arbeitnow" | "remoteok" | "ziprecruiter" | "jooble" | "usajobs">;
   perSourceLimit?: number;
   onProgress?: (info: { completed: number; total: number; source: string; count: number }) => void;
+  includeWorldwideRemote?: boolean;
 }
 
 interface RemotiveJob {
@@ -115,6 +116,11 @@ const inRegion = (location: string, region: RegionFilter): boolean => {
   };
   const keywords = regionKeywords[region] || [];
   return keywords.some(k => loc.includes(k));
+};
+
+const isWorldwideRemote = (location: string): boolean => {
+  const loc = normalizeText(location);
+  return /remote|anywhere|worldwide|global/.test(loc);
 };
 
 const remotiveSearch = async (query: string, location: string): Promise<NormalizedJob[]> => {
@@ -322,7 +328,7 @@ export const searchJobs = async (
   location: string,
   options: SearchOptions = {},
 ): Promise<NormalizedJob[]> => {
-  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30, onProgress } = options;
+  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30, onProgress, includeWorldwideRemote = true } = options;
 
   const want = (src: string) => !sources || sources.includes(src as any);
   const tasks: Array<{ name: string; fn: () => Promise<NormalizedJob[]> }> = [];
@@ -358,7 +364,7 @@ export const searchJobs = async (
     list = list.filter(j => /remote/.test(normalizeText(j.location)) || normalizeText(j.title).includes("remote"));
   }
   if (region !== "any") {
-    list = list.filter(j => inRegion(j.location, region));
+    list = list.filter(j => inRegion(j.location, region) || (includeWorldwideRemote && isWorldwideRemote(j.location)));
   }
   return list;
 }; 
