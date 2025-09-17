@@ -89,7 +89,6 @@ const ResumeBuilder = () => {
   };
 
   useEffect(() => {
-    // Auto-run annotations when text changes (debounced)
     const t = setTimeout(() => { if (resumeText.trim()) runAnnotations(); }, 500);
     return () => clearTimeout(t);
   }, [resumeText, job]);
@@ -110,22 +109,22 @@ const ResumeBuilder = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {job ? (
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium">{job.title}</div>
-                  <div className="text-sm text-muted-foreground">{job.company} • {job.location || 'Remote'}</div>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{job.title}</div>
+                  <div className="text-sm text-muted-foreground truncate">{job.company} • {job.location || 'Remote'}</div>
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {(job.requirements||[]).slice(0,6).map((r,i)=>(<Badge key={i} variant="secondary">{r}</Badge>))}
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => setJob(null)}>Clear</Button>
+                <Button variant="outline" onClick={() => setJob(null)} className="w-full sm:w-auto">Clear</Button>
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">No job selected. Select one in Job Search and it will be saved here.</div>
-                <div className="flex gap-2">
-                  <Input placeholder="Optional: paste job URL for context" value={jobUrl} onChange={(e)=>setJobUrl(e.target.value)} />
-                  <Button variant="outline" disabled>Fetch</Button>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <Input placeholder="Optional: paste job URL for context" value={jobUrl} onChange={(e)=>setJobUrl(e.target.value)} className="w-full" />
+                  <Button variant="outline" disabled className="w-full sm:w-auto">Fetch</Button>
                 </div>
               </div>
             )}
@@ -141,16 +140,16 @@ const ResumeBuilder = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Textarea value={resumeText} onChange={(e)=>setResumeText(e.target.value)} className="min-h-[240px]" placeholder="Paste your resume..." />
-                <div className="flex gap-2">
-                  <Button onClick={runAnnotations} disabled={isAnnotating}>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <Button onClick={runAnnotations} disabled={isAnnotating} className="w-full sm:w-auto">
                     {isAnnotating ? (<><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Analyzing...</>) : (<><HighlighterIcon className="h-4 w-4 mr-2" />Highlight Improvements</>)}
                   </Button>
-                  <Button onClick={handleGenerate} disabled={isGenerating || !resumeText}>
+                  <Button onClick={handleGenerate} disabled={isGenerating || !resumeText} className="w-full sm:w-auto">
                     <Wand2 className="h-4 w-4 mr-2" /> {isGenerating ? 'Generating...' : 'Generate Tailored Resume'}
                   </Button>
                 </div>
               </div>
-              <div>
+              <div className="border rounded-md p-2 overflow-auto max-h-[60vh]">
                 <ResumeHighlighter text={resumeText} annotations={annotations} onChange={setResumeText} />
               </div>
             </div>
