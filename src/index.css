@@ -128,3 +128,7 @@ All colors MUST be HSL.
 html:focus-within {
   scroll-behavior: smooth;
 }
+
+/* Hide scrollbar for horizontal scrollers */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

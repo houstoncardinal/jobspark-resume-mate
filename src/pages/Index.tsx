@@ -176,14 +176,14 @@ const Index = () => {
         </div>
 
         <Tabs id="job-search" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="search" className="relative">
+          <TabsList className="w-full mb-8 flex gap-2 overflow-x-auto no-scrollbar">
+            <TabsTrigger value="search" className="relative flex-shrink-0 whitespace-nowrap px-4 py-2">
               Job Search
               {selectedJob && (
                 <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="resume" className="relative" id="upload">
+            <TabsTrigger value="resume" className="relative flex-shrink-0 whitespace-nowrap px-4 py-2" id="upload">
               Resume Upload
               {(uploadedResume || resumeText) && (
                 <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
@@ -191,7 +191,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger 
               value="match" 
-              className="relative"
+              className="relative flex-shrink-0 whitespace-nowrap px-4 py-2"
               id="match"
               disabled={!(uploadedResume || resumeText) || !selectedJob}
             >
@@ -202,7 +202,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger 
               value="optimize" 
-              className="relative"
+              className="relative flex-shrink-0 whitespace-nowrap px-4 py-2"
               disabled={!(uploadedResume || resumeText) || !selectedJob}
             >
               Resume Optimizer
