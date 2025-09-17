@@ -29,6 +29,7 @@ export interface SearchOptions {
   perSourceLimit?: number;
   onProgress?: (info: { completed: number; total: number; source: string; count: number }) => void;
   includeWorldwideRemote?: boolean;
+  sortByRelevance?: boolean;
 }
 
 interface RemotiveJob {
@@ -94,10 +95,24 @@ interface JoobleResponse {
   }>;
 }
 
+interface AdzunaJob {
+  id?: string;
+  title?: string;
+  company?: { display_name?: string };
+  location?: { display_name?: string };
+  created?: string;
+  description?: string;
+  redirect_url?: string;
+  salary_min?: number;
+  salary_max?: number;
+}
+
 const ZIP_API_KEY = import.meta.env.VITE_ZIPRECRUITER_API_KEY as string | undefined;
 const JOOBLE_API_KEY = import.meta.env.VITE_JOOBLE_API_KEY as string | undefined;
 const USAJOBS_API_KEY = import.meta.env.VITE_USAJOBS_API_KEY as string | undefined;
 const USAJOBS_USER_AGENT = (import.meta.env.VITE_USAJOBS_USER_AGENT as string | undefined) || "";
+const ADZUNA_APP_ID = import.meta.env.VITE_ADZUNA_APP_ID as string | undefined;
+const ADZUNA_APP_KEY = import.meta.env.VITE_ADZUNA_APP_KEY as string | undefined;
 
 const normalizeText = (v: string | undefined | null) => (v || "").toLowerCase().trim();
 
@@ -116,6 +131,20 @@ const inRegion = (location: string, region: RegionFilter): boolean => {
   };
   const keywords = regionKeywords[region] || [];
   return keywords.some(k => loc.includes(k));
+};
+
+const relevanceScore = (query: string, job: NormalizedJob): number => {
+  const q = normalizeText(query);
+  if (!q) return 0;
+  const tokens = q.split(/\s+/).filter(Boolean);
+  const hay = `${normalizeText(job.title)} ${normalizeText(job.company)} ${normalizeText(job.description||'')}`;
+  let score = 0;
+  for (const t of tokens) {
+    if (hay.includes(t)) score += 2;
+    if (hay.includes(`${t} developer`) || hay.includes(`${t} engineer`)) score += 1;
+  }
+  if (normalizeText(job.title).includes(q)) score += 3;
+  return score;
 };
 
 const isWorldwideRemote = (location: string): boolean => {
@@ -289,6 +318,43 @@ const usaJobsSearch = async (query: string, location: string): Promise<Normalize
   });
 };
 
+const adzunaSearch = async (query: string, location: string, region: RegionFilter): Promise<NormalizedJob[]> => {
+  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) return [];
+  // Choose country by region (fallback to US)
+  const countryByRegion: Record<RegionFilter, string> = {
+    "any": "us",
+    "north-america": "us",
+    "south-america": "br",
+    "europe": "gb",
+    "asia": "in",
+    "africa": "za",
+    "oceania": "au",
+    "middle-east": "ae",
+  };
+  const country = countryByRegion[region] || "us";
+  const params = new URLSearchParams();
+  if (query) params.set("what", query);
+  if (location) params.set("where", location);
+  params.set("results_per_page", "50");
+  params.set("content-type", "application/json");
+  const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${encodeURIComponent(ADZUNA_APP_ID)}&app_key=${encodeURIComponent(ADZUNA_APP_KEY)}&${params.toString()}`;
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`Adzuna error: ${res.status}`);
+  const data = await res.json() as { results?: AdzunaJob[] };
+  const items = data.results || [];
+  return items.map((j) => ({
+    id: j.id || `${j.company?.display_name || ''}-${j.title || ''}`,
+    title: j.title || "",
+    company: j.company?.display_name || "",
+    location: j.location?.display_name || "",
+    salary: j.salary_min || j.salary_max ? `$${j.salary_min || ''} - $${j.salary_max || ''}` : undefined,
+    posted: j.created ? new Date(j.created).toDateString() : undefined,
+    description: j.description,
+    source: "adzuna",
+    url: j.redirect_url,
+  }));
+};
+
 const dedupeJobs = (jobs: NormalizedJob[]): NormalizedJob[] => {
   const seen = new Set<string>();
   const result: NormalizedJob[] = [];
@@ -328,7 +394,7 @@ export const searchJobs = async (
   location: string,
   options: SearchOptions = {},
 ): Promise<NormalizedJob[]> => {
-  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30, onProgress, includeWorldwideRemote = true } = options;
+  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30, onProgress, includeWorldwideRemote = true, sortByRelevance } = options;
 
   const want = (src: string) => !sources || sources.includes(src as any);
   const tasks: Array<{ name: string; fn: () => Promise<NormalizedJob[]> }> = [];
@@ -338,6 +404,7 @@ export const searchJobs = async (
   if (want("ziprecruiter")) tasks.push({ name: "ziprecruiter", fn: () => zipRecruiterSearch(query, location) });
   if (want("jooble")) tasks.push({ name: "jooble", fn: () => joobleSearch(query, location) });
   if (want("usajobs")) tasks.push({ name: "usajobs", fn: () => usaJobsSearch(query, location) });
+  if (want("adzuna")) tasks.push({ name: "adzuna", fn: () => adzunaSearch(query, location, region) });
 
   const total = tasks.length;
   let completed = 0;
@@ -366,5 +433,17 @@ export const searchJobs = async (
   if (region !== "any") {
     list = list.filter(j => inRegion(j.location, region) || (includeWorldwideRemote && isWorldwideRemote(j.location)));
   }
+  if (sortByRelevance && query) {
+    list = [...list].sort((a, b) => relevanceScore(query, b) - relevanceScore(query, a));
+  }
   return list;
+};
+
+export const getMissingSourceKeys = () => {
+  const missing: string[] = [];
+  if (!ZIP_API_KEY) missing.push('ziprecruiter');
+  if (!JOOBLE_API_KEY) missing.push('jooble');
+  if (!USAJOBS_API_KEY || !USAJOBS_USER_AGENT) missing.push('usajobs');
+  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) missing.push('adzuna');
+  return missing;
 }; 

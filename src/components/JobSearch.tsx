@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { searchJobs, type NormalizedJob, type RegionFilter } from "@/lib/jobs";
+import { searchJobs, type NormalizedJob, type RegionFilter, getMissingSourceKeys } from "@/lib/jobs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { JobDetails } from "@/components/JobDetails";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
-const ALL_SOURCES = ["remotive", "arbeitnow", "remoteok", "ziprecruiter", "jooble", "usajobs"] as const;
+const ALL_SOURCES = ["remotive", "arbeitnow", "remoteok", "ziprecruiter", "jooble", "usajobs", "adzuna"] as const;
 
 interface JobSearchProps {
   onJobSelect: (job: any) => void;
@@ -63,6 +63,8 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
 
   const [progress, setProgress] = useState<{ completed: number; total: number; last?: { source: string; count: number } } | null>(null);
   const [includeWorldwideRemote, setIncludeWorldwideRemote] = useState(true);
+  const [sortByRelevance, setSortByRelevance] = useState(true);
+  const missingKeys = getMissingSourceKeys();
 
   const detectGeolocation = async () => {
     if (!navigator.geolocation) {
@@ -107,6 +109,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
         perSourceLimit,
         onProgress: ({ completed, total, source, count }) => setProgress({ completed, total, last: { source, count } }),
         includeWorldwideRemote,
+        sortByRelevance,
       });
       setJobs(results);
       setPage(1);
@@ -244,6 +247,15 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
                   <Switch id="include-worldwide" checked={includeWorldwideRemote} onCheckedChange={setIncludeWorldwideRemote} />
                   <label htmlFor="include-worldwide" className="text-sm text-foreground">Include worldwide "Remote" in region</label>
                 </div>
+              </div>
+              {missingKeys.length > 0 && (
+                <div className="mt-3 text-xs text-muted-foreground">
+                  Some sources need API keys: {missingKeys.join(', ')}
+                </div>
+              )}
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                <Switch id="sort-relevance" checked={sortByRelevance} onCheckedChange={setSortByRelevance} />
+                <label htmlFor="sort-relevance" className="text-foreground">Sort by relevance</label>
               </div>
             </div>
           </div>
