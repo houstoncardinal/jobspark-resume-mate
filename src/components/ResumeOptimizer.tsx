@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { computeMatch, extractJobKeywords } from "@/lib/match";
+import { chatComplete } from "@/lib/ai";
 
 interface ResumeOptimizerProps {
   resume: File | null;
@@ -21,6 +22,8 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
   const [hasOptimized, setHasOptimized] = useState(false);
   const [resumeText, setResumeText] = useState("");
   const [recommended, setRecommended] = useState<string[]>([]);
+  const [originalVisible, setOriginalVisible] = useState(false);
+  const [diffSegments, setDiffSegments] = useState<Array<{ type: 'same' | 'added' | 'removed'; text: string }>>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,39 +39,48 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
     return () => window.removeEventListener("resume-text-updated", handler as any);
   }, [selectedJob]);
 
+  const diffText = (oldText: string, newText: string) => {
+    // Simple word-level diff for visual highlight
+    const oldWords = oldText.split(/(\s+)/);
+    const newWords = newText.split(/(\s+)/);
+    const max = Math.max(oldWords.length, newWords.length);
+    const segments: Array<{ type: 'same' | 'added' | 'removed'; text: string }> = [];
+    for (let i = 0; i < max; i++) {
+      const o = oldWords[i] ?? '';
+      const n = newWords[i] ?? '';
+      if (o === n) {
+        if (n) segments.push({ type: 'same', text: n });
+      } else {
+        if (o) segments.push({ type: 'removed', text: o });
+        if (n) segments.push({ type: 'added', text: n });
+      }
+    }
+    return segments;
+  };
+
   const handleOptimize = async () => {
     if ((!resume && !resumeText) || !selectedJob) return;
-    
     setIsOptimizing(true);
     setOptimizationProgress(0);
-    
-    // Simulate AI optimization process
-    const steps = [
-      "Analyzing job requirements...",
-      "Extracting resume content...", 
-      "Identifying optimization opportunities...",
-      "Enhancing keyword density...",
-      "Improving ATS compatibility...",
-      "Generating optimized version..."
-    ];
-    
-    for (let i = 0; i <= steps.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setOptimizationProgress((i / steps.length) * 100);
+    try {
+      // Progress simulation UI only
+      const steps = 6;
+      for (let i = 0; i <= steps; i++) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        setOptimizationProgress((i / steps) * 100);
+      }
+      const system = { role: "system", content: "You are an expert resume writer and ATS optimization assistant. Preserve all truthful experience and details from the original resume. Improve clarity, formatting, measurable impact, and keyword alignment to the target job while keeping content accurate and non-fabricated." } as const;
+      const user = { role: "user", content: `Original Resume (verbatim):\n${resumeText}\n\nTarget Job:\nTitle: ${selectedJob.title}\nCompany: ${selectedJob.company}\nLocation: ${selectedJob.location || ''}\nRequirements: ${(extractJobKeywords(selectedJob, 24)).join(', ')}\nDescription (raw): ${(selectedJob.description||'').replace(/<[^>]+>/g,' ')}\n\nTask:\n1) Produce an optimized resume in clean plain text.\n2) Keep all original experience, titles, employers, dates, and achievements (only rephrase, re-order, and add missing relevant details if implied).\n3) Use strong action verbs, quantified impact where appropriate, and ATS-friendly section headers.\n4) Avoid hallucinations; do not invent employers or roles.\n5) Use succinct bullet points and consistent formatting.\n6) End output with no extra commentary.` } as const;
+      const content = await chatComplete([system as any, user as any], { temperature: 0.5, maxTokens: 2200 });
+      setOptimizedContent(content);
+      setDiffSegments(diffText(resumeText, content));
+      setHasOptimized(true);
+      toast({ title: "Resume Optimized!", description: "Preview the changes on the right." });
+    } catch (e: any) {
+      toast({ title: "Optimization failed", description: e?.message || 'Error generating', variant: 'destructive' });
+    } finally {
+      setIsOptimizing(false);
     }
-    
-    // Use keywords from match to seed content
-    const baseKeywords = recommended.length ? recommended : extractJobKeywords(selectedJob, 12);
-    const mockOptimizedContent = `OPTIMIZED RESUME\n\nSUMMARY\nResults-driven professional aligned with ${selectedJob.title} at ${selectedJob.company}. Strong experience across: ${baseKeywords.join(', ')}. Proven impact in shipping production features, collaborating cross-functionally, and improving KPIs.\n\nHARD SKILLS\n• ${baseKeywords.slice(0,4).join('  • ')}\n• ${baseKeywords.slice(4,8).join('  • ')}\n• ${baseKeywords.slice(8,12).join('  • ')}\n\nEXPERIENCE\n${selectedJob.company} — Role Relevant to ${selectedJob.title}\n• Delivered features mapped to ${baseKeywords.slice(0,3).join(', ')} improving user engagement 20%\n• Implemented scalable solutions leveraging ${baseKeywords.slice(3,6).join(', ')}\n• Partnered with stakeholders to prioritize roadmap and ship on schedule\n\nEDUCATION & CERTIFICATIONS\n• Bachelor of Science in Computer Science\n• Certifications in ${baseKeywords.slice(0,2).join(', ')}\n`;
-
-    setOptimizedContent(mockOptimizedContent);
-    setHasOptimized(true);
-    setIsOptimizing(false);
-    
-    toast({
-      title: "Resume Optimized!",
-      description: "Your resume has been enhanced for better ATS compatibility and job matching.",
-    });
   };
 
   const handleDownload = () => {
@@ -187,9 +199,9 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => setOriginalVisible(v => !v)}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Preview Original
+                  {originalVisible ? 'Hide Original' : 'Preview Original'}
                 </Button>
                 <Button className="flex-1" onClick={handleDownload}>
                   <Download className="mr-2 h-4 w-4" />
@@ -202,22 +214,42 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
       </Card>
 
       {hasOptimized && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Optimized Resume Preview</CardTitle>
-            <CardDescription>
-              AI-enhanced version tailored for the selected job
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              value={optimizedContent}
-              onChange={(e) => setOptimizedContent(e.target.value)}
-              className="min-h[500px] font-mono text-sm"
-              placeholder="Optimized resume content will appear here..."
-            />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Original Resume</CardTitle>
+              <CardDescription>Your original content (read-only)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={`border rounded-md p-3 whitespace-pre-wrap leading-relaxed text-sm font-mono ${originalVisible ? '' : 'opacity-70'}`} style={{ maxHeight: 520, overflow: 'auto' }}>
+                {resumeText}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Optimized Resume Preview</CardTitle>
+              <CardDescription>Changes highlighted in color</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-md p-3 whitespace-pre-wrap leading-relaxed text-sm font-mono" style={{ maxHeight: 520, overflow: 'auto' }}>
+                {diffSegments.length ? (
+                  diffSegments.map((seg, idx) => {
+                    if (seg.type === 'same') return <span key={idx}>{seg.text}</span>;
+                    if (seg.type === 'added') return <span key={idx} className="bg-success/20 ring-1 ring-success px-0.5 rounded-sm">{seg.text}</span>;
+                    return <span key={idx} className="bg-destructive/10 ring-1 ring-destructive/40 line-through px-0.5 rounded-sm">{seg.text}</span>;
+                  })
+                ) : (
+                  <Textarea
+                    value={optimizedContent}
+                    onChange={(e) => setOptimizedContent(e.target.value)}
+                    className="min-h[500px] font-mono text-sm"
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
