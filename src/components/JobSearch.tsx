@@ -61,6 +61,8 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
   const [selectedSources, setSelectedSources] = useState<string[]>([...ALL_SOURCES]);
   const [perSourceLimit, setPerSourceLimit] = useState<number>(30);
 
+  const [progress, setProgress] = useState<{ completed: number; total: number; last?: { source: string; count: number } } | null>(null);
+
   const detectGeolocation = async () => {
     if (!navigator.geolocation) {
       toast({ title: "Geolocation not supported", description: "Your browser does not support location detection.", variant: "destructive" });
@@ -94,14 +96,21 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
   const handleSearch = async () => {
     setIsLoading(true);
     setError(null);
+    setProgress({ completed: 0, total: selectedSources.length });
     try {
       const locationParam = useGeo ? geoLocationParam : "";
-      const results = await searchJobs(searchQuery, locationParam, { region, remoteOnly, sources: selectedSources as any, perSourceLimit });
+      const results = await searchJobs(searchQuery, locationParam, {
+        region,
+        remoteOnly,
+        sources: selectedSources as any,
+        perSourceLimit,
+        onProgress: ({ completed, total, source, count }) => setProgress({ completed, total, last: { source, count } }),
+      });
       setJobs(results);
       setPage(1);
       toast({
         title: "Search Complete",
-        description: `Found ${results.length} jobs matching your criteria`,
+        description: `Found ${results.length} jobs across ${selectedSources.length} sources`,
       });
     } catch (e: any) {
       setError(e?.message || "Failed to fetch jobs");
@@ -112,6 +121,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
       });
     } finally {
       setIsLoading(false);
+      setProgress(null);
     }
   };
 
@@ -234,6 +244,24 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
       </Card>
 
       <div className="grid gap-4">
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="relative h-16 w-16">
+              <div className="absolute inset-0 rounded-full border-4 border-primary/30"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+              <div className="absolute inset-2 rounded-full bg-primary/10 animate-pulse"></div>
+            </div>
+            <div className="mt-3 text-sm text-muted-foreground">
+              {progress ? (
+                <span>
+                  Loading {progress.completed}/{progress.total} sources{progress.last ? ` — ${progress.last.source} (+${progress.last.count})` : ''}
+                </span>
+              ) : (
+                <span>Fetching jobs…</span>
+              )}
+            </div>
+          </div>
+        )}
         {pageJobs.map((job) => (
           <Card key={job.id} className="hover:shadow-lg transition-all duration-200">
             <CardContent className="p-6">

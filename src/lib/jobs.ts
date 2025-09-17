@@ -27,6 +27,7 @@ export interface SearchOptions {
   remoteOnly?: boolean;
   sources?: Array<"remotive" | "arbeitnow" | "remoteok" | "ziprecruiter" | "jooble" | "usajobs">;
   perSourceLimit?: number;
+  onProgress?: (info: { completed: number; total: number; source: string; count: number }) => void;
 }
 
 interface RemotiveJob {
@@ -321,19 +322,36 @@ export const searchJobs = async (
   location: string,
   options: SearchOptions = {},
 ): Promise<NormalizedJob[]> => {
-  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30 } = options;
-  let combined: NormalizedJob[] = [];
+  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30, onProgress } = options;
 
   const want = (src: string) => !sources || sources.includes(src as any);
+  const tasks: Array<{ name: string; fn: () => Promise<NormalizedJob[]> }> = [];
+  if (want("remotive")) tasks.push({ name: "remotive", fn: () => remotiveSearch(query, location) });
+  if (want("arbeitnow")) tasks.push({ name: "arbeitnow", fn: () => arbeitnowSearch(query, location) });
+  if (want("remoteok")) tasks.push({ name: "remoteok", fn: () => remoteOkSearch(query) });
+  if (want("ziprecruiter")) tasks.push({ name: "ziprecruiter", fn: () => zipRecruiterSearch(query, location) });
+  if (want("jooble")) tasks.push({ name: "jooble", fn: () => joobleSearch(query, location) });
+  if (want("usajobs")) tasks.push({ name: "usajobs", fn: () => usaJobsSearch(query, location) });
 
-  try { if (want("remotive")) combined = combined.concat((await remotiveSearch(query, location)).slice(0, perSourceLimit)); } catch {}
-  try { if (want("arbeitnow")) combined = combined.concat((await arbeitnowSearch(query, location)).slice(0, perSourceLimit)); } catch {}
-  try { if (want("remoteok")) combined = combined.concat((await remoteOkSearch(query)).slice(0, perSourceLimit)); } catch {}
-  try { if (want("ziprecruiter")) combined = combined.concat((await zipRecruiterSearch(query, location)).slice(0, perSourceLimit)); } catch {}
-  try { if (want("jooble")) combined = combined.concat((await joobleSearch(query, location)).slice(0, perSourceLimit)); } catch {}
-  try { if (want("usajobs")) combined = combined.concat((await usaJobsSearch(query, location)).slice(0, perSourceLimit)); } catch {}
+  const total = tasks.length;
+  let completed = 0;
+  const results: NormalizedJob[] = [];
 
-  let list = dedupeJobs(combined);
+  await Promise.allSettled(
+    tasks.map(async (t) => {
+      try {
+        const part = (await t.fn()).slice(0, perSourceLimit);
+        results.push(...part);
+        completed += 1;
+        onProgress?.({ completed, total, source: t.name, count: part.length });
+      } catch {
+        completed += 1;
+        onProgress?.({ completed, total, source: t.name, count: 0 });
+      }
+    })
+  );
+
+  let list = dedupeJobs(results);
   list = interleaveBySource(list);
 
   if (remoteOnly) {

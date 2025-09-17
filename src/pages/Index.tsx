@@ -138,7 +138,7 @@ const Index = () => {
                 </div>
               </div>
               <div className="mt-3">
-                <Button size="sm" variant="outline" onClick={() => setActiveTab('search')}>Go to Job Search</Button>
+                <Button size="sm" variant="outline" onClick={() => { setActiveTab('search'); const el = document.getElementById('job-search'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Go to Job Search</Button>
               </div>
             </div>
 
@@ -175,7 +175,7 @@ const Index = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs id="job-search" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="search" className="relative">
               Job Search
