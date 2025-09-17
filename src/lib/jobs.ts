@@ -25,6 +25,8 @@ export type RegionFilter =
 export interface SearchOptions {
   region?: RegionFilter;
   remoteOnly?: boolean;
+  sources?: Array<"remotive" | "arbeitnow" | "remoteok" | "ziprecruiter" | "jooble" | "usajobs">;
+  perSourceLimit?: number;
 }
 
 interface RemotiveJob {
@@ -292,21 +294,48 @@ const dedupeJobs = (jobs: NormalizedJob[]): NormalizedJob[] => {
   return result;
 };
 
+const interleaveBySource = (jobs: NormalizedJob[]): NormalizedJob[] => {
+  const bySource: Record<string, NormalizedJob[]> = {};
+  for (const j of jobs) {
+    bySource[j.source] = bySource[j.source] || [];
+    bySource[j.source].push(j);
+  }
+  const sources = Object.keys(bySource);
+  const result: NormalizedJob[] = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (const s of sources) {
+      const list = bySource[s];
+      if (list && list.length) {
+        result.push(list.shift() as NormalizedJob);
+        added = true;
+      }
+    }
+  }
+  return result;
+};
+
 export const searchJobs = async (
   query: string,
   location: string,
   options: SearchOptions = {},
 ): Promise<NormalizedJob[]> => {
-  const { region = "any", remoteOnly = false } = options;
+  const { region = "any", remoteOnly = false, sources, perSourceLimit = 30 } = options;
   let combined: NormalizedJob[] = [];
-  try { combined = combined.concat(await remotiveSearch(query, location)); } catch {}
-  try { combined = combined.concat(await arbeitnowSearch(query, location)); } catch {}
-  try { combined = combined.concat(await remoteOkSearch(query)); } catch {}
-  try { combined = combined.concat(await zipRecruiterSearch(query, location)); } catch {}
-  try { combined = combined.concat(await joobleSearch(query, location)); } catch {}
-  try { combined = combined.concat(await usaJobsSearch(query, location)); } catch {}
+
+  const want = (src: string) => !sources || sources.includes(src as any);
+
+  try { if (want("remotive")) combined = combined.concat((await remotiveSearch(query, location)).slice(0, perSourceLimit)); } catch {}
+  try { if (want("arbeitnow")) combined = combined.concat((await arbeitnowSearch(query, location)).slice(0, perSourceLimit)); } catch {}
+  try { if (want("remoteok")) combined = combined.concat((await remoteOkSearch(query)).slice(0, perSourceLimit)); } catch {}
+  try { if (want("ziprecruiter")) combined = combined.concat((await zipRecruiterSearch(query, location)).slice(0, perSourceLimit)); } catch {}
+  try { if (want("jooble")) combined = combined.concat((await joobleSearch(query, location)).slice(0, perSourceLimit)); } catch {}
+  try { if (want("usajobs")) combined = combined.concat((await usaJobsSearch(query, location)).slice(0, perSourceLimit)); } catch {}
 
   let list = dedupeJobs(combined);
+  list = interleaveBySource(list);
+
   if (remoteOnly) {
     list = list.filter(j => /remote/.test(normalizeText(j.location)) || normalizeText(j.title).includes("remote"));
   }

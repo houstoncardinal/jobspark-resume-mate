@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { JobDetails } from "@/components/JobDetails";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
+const ALL_SOURCES = ["remotive", "arbeitnow", "remoteok", "ziprecruiter", "jooble", "usajobs"] as const;
+
 interface JobSearchProps {
   onJobSelect: (job: any) => void;
   selectedJob?: any;
@@ -56,6 +58,9 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
   const [geoLabel, setGeoLabel] = useState<string>("");
   const [geoLocationParam, setGeoLocationParam] = useState<string>("");
 
+  const [selectedSources, setSelectedSources] = useState<string[]>([...ALL_SOURCES]);
+  const [perSourceLimit, setPerSourceLimit] = useState<number>(30);
+
   const detectGeolocation = async () => {
     if (!navigator.geolocation) {
       toast({ title: "Geolocation not supported", description: "Your browser does not support location detection.", variant: "destructive" });
@@ -91,7 +96,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
     setError(null);
     try {
       const locationParam = useGeo ? geoLocationParam : "";
-      const results = await searchJobs(searchQuery, locationParam, { region, remoteOnly });
+      const results = await searchJobs(searchQuery, locationParam, { region, remoteOnly, sources: selectedSources as any, perSourceLimit });
       setJobs(results);
       setPage(1);
       toast({
@@ -189,6 +194,34 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
                   {useGeo && geoLabel && (
                     <Badge variant="secondary" className="ml-auto">{geoLabel}</Badge>
                   )}
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="text-sm">
+                  <div className="font-medium mb-1">Sources</div>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_SOURCES.map(src => {
+                      const checked = selectedSources.includes(src);
+                      return (
+                        <button
+                          key={src}
+                          onClick={() => setSelectedSources(checked ? selectedSources.filter(s => s !== src) : [...selectedSources, src])}
+                          className={`px-3 py-1 rounded-full border text-xs ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-foreground/80 hover:text-primary border-muted-foreground/30'}`}
+                        >
+                          {src}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="text-sm">
+                  <div className="font-medium mb-1">Per-source limit</div>
+                  <div className="flex items-center gap-2">
+                    <Input type="number" min={5} max={100} value={perSourceLimit}
+                      onChange={(e) => setPerSourceLimit(Math.max(5, Math.min(100, Number(e.target.value) || 30)))}
+                      className="w-28" />
+                    <span className="text-muted-foreground text-xs">results/source</span>
+                  </div>
                 </div>
               </div>
             </div>
