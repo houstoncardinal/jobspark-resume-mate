@@ -20,7 +20,7 @@ import { EnterpriseDashboard } from "@/components/EnterpriseDashboard";
 import { ViralGrowthHub } from "@/components/ViralGrowthHub";
 import { AIPowerSuite } from "@/components/AIPowerSuite";
 
-export const Fortune500Dashboard = () => {
+const Fortune500Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const companyStats = {
@@ -343,3 +343,5 @@ export const Fortune500Dashboard = () => {
     </div>
   );
 };
+
+export default Fortune500Dashboard;
