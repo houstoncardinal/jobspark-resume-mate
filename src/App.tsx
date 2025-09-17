@@ -10,6 +10,7 @@ import ResumeBuilder from "./pages/ResumeBuilder";
 import FAQ from "./pages/FAQ";
 import Blog from "./pages/Blog";
 import AppliedJobs from "./pages/AppliedJobs";
+import Fortune500Dashboard from "./pages/Fortune500Dashboard";
 import { trackPageView } from "./lib/analytics";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/applied" element={<AppliedJobs />} />
+          <Route path="/fortune500" element={<Fortune500Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

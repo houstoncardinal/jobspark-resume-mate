@@ -4,10 +4,11 @@ import { JobSearch } from "@/components/JobSearch";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { MatchDashboard } from "@/components/MatchDashboard";
 import { ResumeOptimizer } from "@/components/ResumeOptimizer";
+import { JobSearchDiagnostics } from "@/components/JobSearchDiagnostics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Search as SearchIcon, FileText, Sparkles, HelpCircle } from "lucide-react";
+import { CheckCircle2, Search as SearchIcon, FileText, Sparkles, HelpCircle, Wrench } from "lucide-react";
 import { setSeo, injectJsonLd } from "@/lib/seo";
 import { Footer } from "@/components/Footer";
 
@@ -22,16 +23,16 @@ const Index = () => {
     setSeo({
       title: "Gigm8 — Find Jobs, Match & Optimize Your Resume",
       description: "Discover curated jobs worldwide, analyze your resume against any role, and optimize with AI to improve ATS scores and keyword alignment.",
-      canonical: "https://jobspark.app/",
+      canonical: "https://gigm8.com/",
     });
     injectJsonLd('jsonld-website', {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "Gigm8",
-      "url": "https://jobspark.app/",
+      "url": "https://gigm8.com/",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://jobspark.app/?q={search_term_string}",
+        "target": "https://gigm8.com/?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     });
@@ -49,173 +50,148 @@ const Index = () => {
     const handler = (e: any) => {
       const text = e?.detail?.text || "";
       setResumeText(text);
-      try { localStorage.setItem("resumeText", text); } catch {}
-      if (selectedJob) {
-        setActiveTab("match");
-      }
-    };
-    const navHandler = (e: any) => {
-      const tab = e?.detail?.tab;
-      if (tab) setActiveTab(tab);
+      localStorage.setItem("resumeText", text);
     };
     window.addEventListener("resume-text-updated", handler as any);
-    window.addEventListener("navigate-tab", navHandler as any);
-    return () => {
-      window.removeEventListener("resume-text-updated", handler as any);
-      window.removeEventListener("navigate-tab", navHandler as any);
-    };
-  }, [selectedJob]);
+    return () => window.removeEventListener("resume-text-updated", handler as any);
+  }, []);
 
-  // Auto-navigate when job is selected
+  const handleResumeUpload = (file: File, text: string) => {
+    setUploadedResume(file);
+    setResumeText(text);
+    localStorage.setItem("resumeText", text);
+    toast({
+      title: "Resume Uploaded!",
+      description: "Your resume has been processed and is ready for analysis.",
+    });
+  };
+
   const handleJobSelect = (job: any) => {
     setSelectedJob(job);
-    try { localStorage.setItem("selectedJob", JSON.stringify(job)); } catch {}
     toast({
       title: "Job Selected!",
-      description: `Selected ${job.title} at ${job.company}. Upload your resume to see the match analysis.`,
+      description: `You've selected ${job.title} at ${job.company}. Ready for analysis!`,
     });
-    
-    if (uploadedResume || resumeText) {
-      setActiveTab("match");
-      toast({
-        title: "Match Analysis Ready",
-        description: "Analyzing your resume against the selected job requirements.",
-      });
-    } else {
-      setActiveTab("resume");
-    }
   };
-
-  // Auto-navigate when resume is uploaded
-  const handleResumeUpload = (file: File) => {
-    setUploadedResume(file);
-    
-    if (selectedJob) {
-      setTimeout(() => {
-        setActiveTab("match");
-        toast({
-          title: "Match Analysis Ready",
-          description: "Your resume has been analyzed against the selected job.",
-        });
-      }, 1500);
-    } else {
-      toast({
-        title: "Resume Uploaded!",
-        description: "Now select a job from the Job Search tab to see match analysis.",
-      });
-      setTimeout(() => setActiveTab("search"), 1500);
-    }
-  };
-
-  const step1Done = !!selectedJob;
-  const step2Done = !!(uploadedResume || resumeText);
-  const step3Ready = step1Done && step2Done;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        <section className="mb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
-                Find Great Jobs. Perfect Your Resume.
-              </h1>
-              <p className="text-muted-foreground text-base md:text-lg mb-6 max-w-xl">
-                Gigm8 brings together high-quality job listings with an AI resume toolkit so you can search, match, and optimize in one place.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => { setActiveTab('search'); const el = document.getElementById('job-search'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
-                  <SearchIcon className="h-4 w-4 mr-2" /> Start Searching
-                </Button>
-                <Button variant="outline" onClick={() => setActiveTab('optimize')}>
-                  <Sparkles className="h-4 w-4 mr-2" /> Optimize Resume
-                </Button>
+        {/* Hero Section */}
+        <section className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+            Find Your <span className="text-primary">Dream Job</span>
+            <br />
+            <span className="text-2xl md:text-4xl text-muted-foreground font-normal">
+              Match • Optimize • Apply
+            </span>
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Discover high-quality job listings worldwide, analyze your resume against any role, 
+            and use AI to optimize your application for better results.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={() => document.getElementById('job-search')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-lg px-8 py-6"
+            >
+              <SearchIcon className="h-5 w-5 mr-2" />
+              Start Job Search
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={() => setActiveTab("upload")}
+              className="text-lg px-8 py-6"
+            >
+              <FileText className="h-5 w-5 mr-2" />
+              Upload Resume
+            </Button>
+          </div>
+        </section>
+
+        {/* Tools Panel */}
+        <section className="mb-12">
+          <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-center mb-6">Powerful Job Search Tools</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <SearchIcon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">1. Search Jobs</h3>
+                <p className="text-sm text-muted-foreground">Find opportunities across multiple job boards</p>
               </div>
-            </div>
-            <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/5 to-accent/10">
-              <div className="text-sm text-muted-foreground mb-2">Tools</div>
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="secondary" className="justify-start" onClick={() => setActiveTab('search')}><SearchIcon className="h-4 w-4 mr-2" /> Job Search</Button>
-                <Button variant="secondary" className="justify-start" onClick={() => setActiveTab('resume')}><FileText className="h-4 w-4 mr-2" /> Resume Upload</Button>
-                <Button variant="secondary" className="justify-start" disabled={!(uploadedResume || resumeText) || !selectedJob} onClick={() => setActiveTab('match')}><CheckCircle2 className="h-4 w-4 mr-2" /> Match Analysis</Button>
-                <Button variant="secondary" className="justify-start" disabled={!(uploadedResume || resumeText) || !selectedJob} onClick={() => setActiveTab('optimize')}><Sparkles className="h-4 w-4 mr-2" /> Resume Optimizer</Button>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">2. Upload Resume</h3>
+                <p className="text-sm text-muted-foreground">Analyze your resume against job requirements</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">3. AI Optimize</h3>
+                <p className="text-sm text-muted-foreground">Get AI-powered resume improvements</p>
               </div>
             </div>
           </div>
         </section>
 
-        <Tabs id="job-search" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full mb-8 flex gap-2 overflow-x-auto no-scrollbar">
-            <TabsTrigger value="search" className="relative flex-shrink-0 whitespace-nowrap px-4 py-2">
-              Job Search
-              {selectedJob && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
-              )}
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 overflow-x-auto no-scrollbar">
+            <TabsTrigger value="search" className="flex items-center gap-2">
+              <SearchIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Job Search</span>
             </TabsTrigger>
-            <TabsTrigger value="resume" className="relative flex-shrink-0 whitespace-nowrap px-4 py-2" id="upload">
-              Resume Upload
-              {(uploadedResume || resumeText) && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
-              )}
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Resume Upload</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="match" 
-              className="relative flex-shrink-0 whitespace-nowrap px-4 py-2"
-              id="match"
-              disabled={!(uploadedResume || resumeText) || !selectedJob}
-            >
-              Match Analysis
-              {(uploadedResume || resumeText) && selectedJob && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full animate-pulse" />
-              )}
+            <TabsTrigger value="match" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Match Analysis</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="optimize" 
-              className="relative flex-shrink-0 whitespace-nowrap px-4 py-2"
-              disabled={!(uploadedResume || resumeText) || !selectedJob}
-            >
-              Resume Optimizer
-              {(uploadedResume || resumeText) && selectedJob && (
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-accent rounded-full" />
-              )}
+            <TabsTrigger value="optimize" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">AI Optimize</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="search" className="space-y-6">
+          <TabsContent value="search" id="job-search">
             <JobSearch onJobSelect={handleJobSelect} selectedJob={selectedJob} />
           </TabsContent>
 
-          <TabsContent value="resume" className="space-y-6">
+          <TabsContent value="upload">
             <ResumeUpload onResumeUpload={handleResumeUpload} uploadedResume={uploadedResume} />
           </TabsContent>
 
-          <TabsContent value="match" className="space-y-6">
+          <TabsContent value="match">
             <MatchDashboard resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
           </TabsContent>
 
-          <TabsContent value="optimize" className="space-y-6">
+          <TabsContent value="optimize">
             <ResumeOptimizer resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
           </TabsContent>
         </Tabs>
 
-        <section id="help" className="mt-10 border rounded-lg p-5 bg-muted/20">
-          <div className="flex items-center gap-2 mb-2">
-            <HelpCircle className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">How it works</h2>
+        {/* Diagnostics Section */}
+        <section className="mt-12">
+          <div className="flex items-center gap-2 mb-4">
+            <Wrench className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Troubleshooting</h2>
           </div>
-          <ol className="list-decimal pl-5 space-y-1 text-sm text-muted-foreground">
-            <li>Search for a role using keywords. Use Filters to pick Region, Remote, or your location.</li>
-            <li>Select a job you like. We save it and show full details.</li>
-            <li>Upload or paste your resume text. We auto-extract text from PDF/DOCX when possible.</li>
-            <li>Open Match Analysis to see scores, keyword gaps, and suggestions.</li>
-            <li>Open the Resume Builder to see color-coded highlights and apply AI fixes or generate a tailored version.</li>
-          </ol>
+          <JobSearchDiagnostics />
         </section>
-
-        <Footer />
       </main>
+
+      <Footer />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { Search, FileText, BarChart3, Zap, Sparkles, SlidersHorizontal, Globe2, ToggleRight, HelpCircle } from "lucide-react";
+import { Search, FileText, BarChart3, Zap, Sparkles, SlidersHorizontal, Globe2, ToggleRight, HelpCircle, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -33,11 +33,20 @@ export const Header = () => {
             <Link to="/applied" className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors">
               <span className="text-sm">Applied Jobs</span>
             </Link>
+            <Link to="/fortune500" className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors">
+              <Crown className="h-4 w-4" />
+              <span className="text-sm">Fortune 500</span>
+            </Link>
           </nav>
 
-          <Button asChild variant="default" className="shadow">
-            <Link to="/builder">Open Resume Builder</Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/builder">Resume Builder</Link>
+            </Button>
+            <Button asChild variant="default" className="shadow">
+              <Link to="/fortune500">View Strategy</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mt-3 hidden md:flex items-center gap-2 text-xs">
