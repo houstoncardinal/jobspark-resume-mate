@@ -48,6 +48,9 @@ const ResumeBuilder = () => {
   });
   const [enrichQuery, setEnrichQuery] = useState("");
   const [isEnriching, setIsEnriching] = useState(false);
+  const [template, setTemplate] = useState<'modern' | 'classic' | 'minimal'>('modern');
+  const [libraryName, setLibraryName] = useState("");
+  const [library, setLibrary] = useState<Array<{ name: string; content: string; updatedAt: number }>>([]);
 
   useEffect(() => {
     setSeo({
@@ -81,6 +84,8 @@ const ResumeBuilder = () => {
     try {
       const saved = localStorage.getItem("builderResumeText");
       if (saved && !resumeText) setResumeText(saved);
+      const libRaw = localStorage.getItem('resumeLibrary');
+      if (libRaw) setLibrary(JSON.parse(libRaw));
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -88,6 +93,9 @@ const ResumeBuilder = () => {
     const t = setTimeout(() => { try { localStorage.setItem("builderResumeText", resumeText); } catch {} }, 300);
     return () => clearTimeout(t);
   }, [resumeText]);
+  useEffect(() => {
+    try { localStorage.setItem('resumeLibrary', JSON.stringify(library)); } catch {}
+  }, [library]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -172,6 +180,71 @@ Return: A tailored resume in clean plain text with strong section headers and su
   };
   const copyResume = async () => { try { await navigator.clipboard.writeText(resumeText); } catch {} };
   const copyOutput = async () => { try { await navigator.clipboard.writeText(aiOutput); } catch {} };
+  const exportTxt = () => {
+    const blob = new Blob([resumeText], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `resume-${Date.now()}.txt`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+  const printPdf = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<html><head><title>Resume</title><style>body{font-family:ui-sans-serif,system-ui,Arial;line-height:1.5;padding:24px;white-space:pre-wrap}</style></head><body>${resumeText.replace(/</g,'&lt;')}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+  const applyTemplate = (mode: 'modern'|'classic'|'minimal') => {
+    setTemplate(mode);
+    setResumeText(prev => {
+      let t = prev;
+      // Normalize headings
+      t = t.replace(/^([A-Z ]{3,})$/gm, (m)=>m.trim());
+      const map: Record<string,string> = mode==='classic' ? {
+        'SUMMARY':'Summary','EXPERIENCE':'Professional Experience','EDUCATION':'Education','SKILLS':'Skills','PROJECTS':'Projects','CERTIFICATIONS':'Certifications','HEADLINE':'Headline','NAME':'Name'
+      } : mode==='minimal' ? {
+        'SUMMARY':'Summary','EXPERIENCE':'Experience','EDUCATION':'Education','SKILLS':'Skills'
+      } : {
+        'SUMMARY':'SUMMARY','EXPERIENCE':'EXPERIENCE','EDUCATION':'EDUCATION','SKILLS':'SKILLS','PROJECTS':'PROJECTS'
+      };
+      Object.entries(map).forEach(([k,v])=>{ const re=new RegExp(`^${k}\\s*$`,'gmi'); t = t.replace(re, v); });
+      // Bullet style
+      if (mode==='minimal') {
+        t = t.replace(/^•\s+/gm, '- ');
+      } else if (mode==='classic') {
+        t = t.replace(/^[-•]\s+/gm, '• ');
+      }
+      return t;
+    });
+  };
+  const saveToLibrary = () => {
+    const name = libraryName.trim() || `Resume ${new Date().toLocaleString()}`;
+    const existingIdx = library.findIndex(i => i.name === name);
+    const item = { name, content: resumeText, updatedAt: Date.now() };
+    if (existingIdx >= 0) {
+      const copy = [...library]; copy[existingIdx] = item; setLibrary(copy);
+    } else {
+      setLibrary([item, ...library]);
+    }
+    setLibraryName(name);
+  };
+  const loadFromLibrary = (name: string) => {
+    const it = library.find(i => i.name === name); if (it) setResumeText(it.content);
+  };
+  const deleteFromLibrary = (name: string) => {
+    setLibrary(library.filter(i => i.name !== name));
+  };
+  const oneClickApply = () => {
+    if (!job?.url) return;
+    try {
+      const appliedRaw = localStorage.getItem('appliedJobs');
+      const list = appliedRaw ? JSON.parse(appliedRaw) : [];
+      list.unshift({ jobId: job.id, title: job.title, company: job.company, url: job.url, at: Date.now(), resumeName: libraryName || 'unsaved' });
+      localStorage.setItem('appliedJobs', JSON.stringify(list.slice(0,200)));
+    } catch {}
+    window.open(job.url, '_blank');
+  };
 
   const handleUploadToEditor = async (file: File) => {
     const tryExtractText = async (f: File) => {
@@ -296,6 +369,7 @@ Skills: ${createForm.skills}` } as const;
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleQuickApply} disabled={isGenerating}><Sparkles className="h-4 w-4 mr-2" /> Quick Tailor</Button>
+                  <Button variant="default" onClick={oneClickApply} disabled={!job?.url}>One‑Click Apply</Button>
                   <Button variant="outline" onClick={() => setJob(null)} className="w-full sm:w-auto">Clear</Button>
                 </div>
               </div>
@@ -339,6 +413,14 @@ Skills: ${createForm.skills}` } as const;
                   <Button variant="outline" onClick={sectionize}><Scissors className="h-4 w-4 mr-2" /> Section Headings</Button>
                   <Button variant="outline" onClick={bulletify}><List className="h-4 w-4 mr-2" /> Bulletify Lines</Button>
                   <Button variant="outline" onClick={normalizeSpacing}><AlignJustify className="h-4 w-4 mr-2" /> Normalize Spacing</Button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Template</span>
+                    <select value={template} onChange={(e)=>applyTemplate(e.target.value as any)} className="border rounded px-2 py-1 text-sm bg-background">
+                      <option value="modern">Modern</option>
+                      <option value="classic">Classic</option>
+                      <option value="minimal">Minimal</option>
+                    </select>
+                  </div>
                   <Button onClick={runAnnotations} disabled={isAnnotating}>
                     {isAnnotating ? (<><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Analyzing...</>) : (<><HighlighterIcon className="h-4 w-4 mr-2" />Highlight Improvements</>)}
                   </Button>
@@ -349,12 +431,25 @@ Skills: ${createForm.skills}` } as const;
                     </>
                   )}
                   <Button variant="outline" onClick={copyResume}>Copy</Button>
+                  <Button variant="outline" onClick={exportTxt}>Export TXT</Button>
+                  <Button variant="outline" onClick={printPdf}>Print PDF</Button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Textarea value={resumeText} onChange={(e)=>setResumeText(e.target.value)} className="min-h-[280px]" placeholder="Paste your resume..." />
                   <div className="border rounded-md p-2 overflow-auto max-h-[60vh]">
                     <ResumeHighlighter text={resumeText} annotations={annotations} onChange={setResumeText} />
                   </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input placeholder="Save as…" value={libraryName} onChange={(e)=>setLibraryName(e.target.value)} className="w-56" />
+                  <Button variant="default" onClick={saveToLibrary}>Save</Button>
+                  {library.length > 0 && <span className="text-xs text-muted-foreground">Library</span>}
+                  {library.slice(0,5).map(it => (
+                    <div key={it.name} className="flex items-center gap-1 border rounded px-2 py-1 text-xs">
+                      <button onClick={()=>loadFromLibrary(it.name)} className="underline">{it.name}</button>
+                      <button onClick={()=>deleteFromLibrary(it.name)} aria-label="delete" title="Delete" className="text-destructive">×</button>
+                    </div>
+                  ))}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={handleGenerate} disabled={isGenerating || !resumeText}>
