@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import * as React from "react";
 import { Upload, FileText, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,14 +9,22 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ResumeUploadProps {
   onResumeUpload: (file: File) => void;
+  uploadedResume?: File | null;
 }
 
-export const ResumeUpload = ({ onResumeUpload }: ResumeUploadProps) => {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+export const ResumeUpload = ({ onResumeUpload, uploadedResume: existingResume }: ResumeUploadProps) => {
+  const [uploadedFile, setUploadedFile] = useState<File | null>(existingResume || null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
+
+  // Update local state when prop changes
+  React.useEffect(() => {
+    if (existingResume && !uploadedFile) {
+      setUploadedFile(existingResume);
+    }
+  }, [existingResume, uploadedFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();

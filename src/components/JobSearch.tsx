@@ -48,9 +48,10 @@ const mockJobs = [
 
 interface JobSearchProps {
   onJobSelect: (job: any) => void;
+  selectedJob?: any;
 }
 
-export const JobSearch = ({ onJobSelect }: JobSearchProps) => {
+export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [jobs, setJobs] = useState(mockJobs);
@@ -147,9 +148,10 @@ export const JobSearch = ({ onJobSelect }: JobSearchProps) => {
                 <div className="ml-4">
                   <Button 
                     onClick={() => onJobSelect(job)}
-                    variant="outline"
+                    variant={selectedJob?.id === job.id ? "default" : "outline"}
+                    className={selectedJob?.id === job.id ? "bg-success hover:bg-success/90" : ""}
                   >
-                    Analyze Match
+                    {selectedJob?.id === job.id ? "Selected ✓" : "Select Job"}
                   </Button>
                 </div>
               </div>

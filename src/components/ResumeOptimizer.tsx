@@ -29,7 +29,7 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
     // Simulate AI optimization process
     const steps = [
       "Analyzing job requirements...",
-      "Extracting resume content...",
+      "Extracting resume content...", 
       "Identifying optimization opportunities...",
       "Enhancing keyword density...",
       "Improving ATS compatibility...",
@@ -41,15 +41,16 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
       setOptimizationProgress((i / steps.length) * 100);
     }
     
-    // Mock optimized content
+    // Mock optimized content with job-specific keywords
+    const jobKeywords = selectedJob.requirements?.join(', ') || "React, TypeScript, JavaScript";
     const mockOptimizedContent = `SENIOR FRONTEND DEVELOPER
 
 PROFESSIONAL SUMMARY
-Results-driven Senior Frontend Developer with 5+ years of experience in React, TypeScript, and modern web technologies. Proven track record of delivering high-performance web applications using Next.js, Tailwind CSS, and GraphQL. Expert in agile development methodologies with strong focus on user experience and scalable architecture.
+Results-driven Senior Frontend Developer with 5+ years of experience in ${jobKeywords}. Proven track record of delivering high-performance web applications using ${selectedJob.requirements?.[0] || 'React'}, ${selectedJob.requirements?.[1] || 'TypeScript'}, and ${selectedJob.requirements?.[2] || 'modern web technologies'}. Expert in agile development methodologies with strong focus on user experience and scalable architecture.
 
 TECHNICAL SKILLS
-• Frontend: React, TypeScript, Next.js, JavaScript (ES6+)
-• Styling: Tailwind CSS, CSS3, Sass, Styled Components
+• Frontend: ${selectedJob.requirements?.slice(0, 4).join(', ') || 'React, TypeScript, Next.js, JavaScript (ES6+)'}
+• Styling: Tailwind CSS, CSS3, Sass, Styled Components  
 • State Management: Redux, Context API, Zustand
 • APIs: GraphQL, REST, Apollo Client
 • Tools: Git, Webpack, Vite, Docker
@@ -57,18 +58,27 @@ TECHNICAL SKILLS
 
 PROFESSIONAL EXPERIENCE
 
-Senior Frontend Developer | TechCorp Solutions | 2021 - Present
-• Developed and maintained 15+ React applications serving 100K+ daily active users
-• Implemented TypeScript across all projects, reducing bugs by 40%
-• Built responsive interfaces using Tailwind CSS, improving mobile engagement by 35%
-• Integrated GraphQL APIs, reducing data fetching time by 50%
+Senior Frontend Developer | ${selectedJob.company} | 2021 - Present
+• Developed and maintained 15+ ${selectedJob.requirements?.[0] || 'React'} applications serving 100K+ daily active users
+• Implemented ${selectedJob.requirements?.[1] || 'TypeScript'} across all projects, reducing bugs by 40%
+• Built responsive interfaces using ${selectedJob.requirements?.[3] || 'CSS'}, improving mobile engagement by 35%
+• Integrated ${selectedJob.requirements?.[4] || 'REST'} APIs, reducing data fetching time by 50%
 • Collaborated in agile development sprints, consistently delivering features on time
 
-Frontend Developer | StartupXYZ | 2019 - 2021
-• Created React-based dashboard using Next.js, improving page load speeds by 60%
-• Developed component library with Tailwind CSS, used across 8 different projects
+Frontend Developer | TechCorp Solutions | 2019 - 2021
+• Created ${selectedJob.requirements?.[0] || 'React'}-based dashboard, improving page load speeds by 60%
+• Developed component library with ${selectedJob.requirements?.[3] || 'CSS frameworks'}, used across 8 different projects
 • Implemented automated testing with Jest, achieving 85% code coverage
-• Worked closely with UX/UI designers to implement pixel-perfect interfaces`;
+• Worked closely with UX/UI designers to implement pixel-perfect interfaces
+
+EDUCATION
+Bachelor of Science in Computer Science | University of Technology | 2019
+Relevant Coursework: ${selectedJob.requirements?.slice(0, 3).join(', ') || 'Web Development, Software Engineering, Database Design'}
+
+CERTIFICATIONS
+• ${selectedJob.requirements?.[0] || 'React'} Developer Certification
+• ${selectedJob.requirements?.[1] || 'TypeScript'} Advanced Certification
+• Agile Development Practitioner`;
 
     setOptimizedContent(mockOptimizedContent);
     setHasOptimized(true);
@@ -77,6 +87,21 @@ Frontend Developer | StartupXYZ | 2019 - 2021
     toast({
       title: "Resume Optimized!",
       description: "Your resume has been enhanced for better ATS compatibility and job matching.",
+    });
+  };
+
+  const handleDownload = () => {
+    const element = document.createElement("a");
+    const file = new Blob([optimizedContent], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `optimized-resume-${selectedJob?.company?.replace(/\s+/g, '-').toLowerCase() || 'job'}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast({
+      title: "Resume Downloaded!",
+      description: "Your optimized resume has been saved to your downloads folder.",
     });
   };
 
@@ -180,7 +205,7 @@ Frontend Developer | StartupXYZ | 2019 - 2021
                   <Eye className="mr-2 h-4 w-4" />
                   Preview Original
                 </Button>
-                <Button className="flex-1">
+                <Button className="flex-1" onClick={handleDownload}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Optimized
                 </Button>
