@@ -27,6 +27,9 @@ export const Header = () => {
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm">Match Analysis</span>
             </a>
+            <Link to="/blog" className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors">
+              <span className="text-sm">Blog</span>
+            </Link>
           </nav>
 
           <Button asChild variant="default" className="shadow">

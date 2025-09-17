@@ -33,7 +33,7 @@ const faqs = [
 const FAQ = () => {
   useEffect(() => {
     setSeo({
-      title: "FAQ — GigmateAI",
+      title: "FAQ — Gigm8",
       description: "Frequently asked questions about job sources, match analysis, and the AI resume builder.",
       canonical: "https://jobspark.app/faq",
     });
@@ -55,7 +55,7 @@ const FAQ = () => {
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
-          <p className="text-muted-foreground">Everything you need to know about GigmateAI</p>
+          <p className="text-muted-foreground">Everything you need to know about Gigm8</p>
         </div>
         <div className="grid gap-4">
           {faqs.map((f, i) => (

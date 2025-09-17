@@ -20,14 +20,14 @@ const Index = () => {
 
   useEffect(() => {
     setSeo({
-      title: "JobSpark Resume Mate — Find Jobs, Match & Optimize Your Resume",
-      description: "Search quality job listings, analyze your resume against a job, and use AI to optimize in real time.",
+      title: "Gigm8 — Find Jobs, Match & Optimize Your Resume",
+      description: "Discover curated jobs worldwide, analyze your resume against any role, and optimize with AI to improve ATS scores and keyword alignment.",
       canonical: "https://jobspark.app/",
     });
     injectJsonLd('jsonld-website', {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "JobSpark Resume Mate",
+      "name": "Gigm8",
       "url": "https://jobspark.app/",
       "potentialAction": {
         "@type": "SearchAction",

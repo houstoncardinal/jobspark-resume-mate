@@ -35,14 +35,14 @@ const ResumeBuilder = () => {
 
   useEffect(() => {
     setSeo({
-      title: "AI Resume Builder — JobSpark Resume Mate",
-      description: "Build and tailor your resume with AI in real time. Highlight improvements, apply fixes, and generate a tailored version for any job.",
+      title: "AI Resume Builder — Gigm8",
+      description: "Build and tailor your resume with AI in real time. Highlight improvements, fix issues, and generate a tailored version for any job.",
       canonical: "https://jobspark.app/builder",
     });
     injectJsonLd('jsonld-app', {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "JobSpark Resume Builder",
+      "name": "Gigm8 Resume Builder",
       "applicationCategory": "WebApplication",
       "operatingSystem": "Any",
       "url": "https://jobspark.app/builder"
