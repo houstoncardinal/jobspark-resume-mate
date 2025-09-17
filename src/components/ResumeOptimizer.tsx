@@ -13,9 +13,10 @@ import { chatComplete } from "@/lib/ai";
 interface ResumeOptimizerProps {
   resume: File | null;
   selectedJob: any;
+  resumeText?: string;
 }
 
-export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) => {
+export const ResumeOptimizer = ({ resume, selectedJob, resumeText: propResumeText }: ResumeOptimizerProps) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationProgress, setOptimizationProgress] = useState(0);
   const [optimizedContent, setOptimizedContent] = useState("");
@@ -25,6 +26,16 @@ export const ResumeOptimizer = ({ resume, selectedJob }: ResumeOptimizerProps) =
   const [originalVisible, setOriginalVisible] = useState(false);
   const [diffSegments, setDiffSegments] = useState<Array<{ type: 'same' | 'added' | 'removed'; text: string }>>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (propResumeText) {
+      setResumeText(propResumeText);
+      if (selectedJob) {
+        const match = computeMatch(propResumeText, selectedJob);
+        setRecommended(match.recommendedKeywords.slice(0, 12));
+      }
+    }
+  }, [propResumeText, selectedJob]);
 
   useEffect(() => {
     const handler = (e: any) => {

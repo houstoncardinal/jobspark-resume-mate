@@ -192,17 +192,11 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="match" className="space-y-6">
-            <MatchDashboard 
-              resume={uploadedResume} 
-              selectedJob={selectedJob} 
-            />
+            <MatchDashboard resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
           </TabsContent>
 
           <TabsContent value="optimize" className="space-y-6">
-            <ResumeOptimizer 
-              resume={uploadedResume} 
-              selectedJob={selectedJob} 
-            />
+            <ResumeOptimizer resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
           </TabsContent>
         </Tabs>
 

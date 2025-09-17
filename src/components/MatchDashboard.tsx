@@ -11,11 +11,18 @@ import { ResumeAudit } from "@/components/ResumeAudit";
 interface MatchDashboardProps {
   resume: File | null;
   selectedJob: NormalizedJob | null;
+  resumeText?: string;
 }
 
-export const MatchDashboard = ({ resume, selectedJob }: MatchDashboardProps) => {
+export const MatchDashboard = ({ resume, selectedJob, resumeText: propResumeText }: MatchDashboardProps) => {
   const [resumeText, setResumeText] = React.useState<string>("");
   const [match, setMatch] = React.useState<ReturnType<typeof computeMatch> | null>(null);
+
+  React.useEffect(() => {
+    if (propResumeText) {
+      setResumeText(propResumeText);
+    }
+  }, [propResumeText]);
 
   React.useEffect(() => {
     const handler = (e: any) => {
