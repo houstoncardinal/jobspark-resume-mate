@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Wand2, FileText, Building2, Highlighter as HighlighterIcon, RefreshCw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wand2, FileText, Building2, Highlighter as HighlighterIcon, RefreshCw, Upload, Scissors, List, AlignJustify, Sparkles } from "lucide-react";
 import { chatComplete } from "@/lib/ai";
+import { isPdlConfigured, pdlEnrichPerson } from "@/lib/pdl";
 import type { NormalizedJob } from "@/lib/jobs";
 import { analyzeResumeTextForAnnotations, type AnnotationSpan } from "@/lib/annotation";
 import { ResumeHighlighter } from "@/components/ResumeHighlighter";
@@ -32,6 +34,20 @@ const ResumeBuilder = () => {
   const [jobUrl, setJobUrl] = useState("");
   const [annotations, setAnnotations] = useState<AnnotationSpan[]>([]);
   const [isAnnotating, setIsAnnotating] = useState(false);
+  const [activeMode, setActiveMode] = useState<"edit" | "create">("edit");
+  const [createForm, setCreateForm] = useState({
+    fullName: "",
+    headline: "",
+    email: "",
+    phone: "",
+    location: "",
+    summary: "",
+    experience: "",
+    education: "",
+    skills: "",
+  });
+  const [enrichQuery, setEnrichQuery] = useState("");
+  const [isEnriching, setIsEnriching] = useState(false);
 
   useEffect(() => {
     setSeo({
@@ -60,12 +76,34 @@ const ResumeBuilder = () => {
     return () => window.removeEventListener("resume-text-updated", handler as any);
   }, []);
 
+  // Persist editor text locally for continuity
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("builderResumeText");
+      if (saved && !resumeText) setResumeText(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => { try { localStorage.setItem("builderResumeText", resumeText); } catch {} }, 300);
+    return () => clearTimeout(t);
+  }, [resumeText]);
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     setAiOutput("");
     try {
       const system = { role: "system", content: "You are an expert resume writer and ATS optimization assistant." } as const;
-      const user = { role: "user", content: `Create a tailored resume.\nJob: ${job?.title || 'N/A'} at ${job?.company || 'N/A'}\nLocation: ${job?.location || ''}\nRequirements: ${(job?.requirements||[]).join(', ')}\nDescription: ${(job?.description||'').replace(/<[^>]+>/g, ' ')}\n---\nResume Text:\n${resumeText}\n---\nInstructions: Rewrite the resume to align with the job while keeping truthful experience. Improve ATS formatting, add missing but relevant skills from the requirements if plausible, and optimize keywords. Return a clean resume in plain text with clear sections.` } as const;
+      const user = { role: "user", content: `Create a tailored resume.
+Job: ${job?.title || 'N/A'} at ${job?.company || 'N/A'}
+Location: ${job?.location || ''}
+Requirements: ${(job?.requirements||[]).join(', ')}
+Description: ${(job?.description||'').replace(/<[^>]+>/g, ' ')}
+---
+Resume Text:
+${resumeText}
+---
+Instructions: Rewrite the resume to align with the job while keeping truthful experience. Improve ATS formatting, add missing but relevant skills from the requirements if plausible, and optimize keywords. Return a clean resume in plain text with clear sections.` } as const;
       const content = await chatComplete([system as any, user] as any, { temperature: 0.6, maxTokens: 1800 });
       setAiOutput(content);
     } catch (e: any) {
@@ -93,6 +131,145 @@ const ResumeBuilder = () => {
     return () => clearTimeout(t);
   }, [resumeText, job]);
 
+  const handleQuickApply = async () => {
+    if (!resumeText.trim() || !job) return;
+    setIsGenerating(true);
+    setAiOutput("");
+    try {
+      const system = { role: "system", content: "You are an expert resume writer. Tailor the provided resume to the target job without inventing new roles. Improve impact, quantify achievements, align keywords, keep truthful details." } as const;
+      const user = { role: "user", content: `Original Resume:
+${resumeText}
+
+Target Job:
+${job.title} at ${job.company}
+Location: ${job.location || ''}
+Requirements: ${(job?.requirements||[]).join(', ')}
+Description: ${(job?.description||'').replace(/<[^>]+>/g,' ')}
+
+Return: A tailored resume in clean plain text with strong section headers and succinct bullets.` } as const;
+      const content = await chatComplete([system as any, user] as any, { temperature: 0.5, maxTokens: 1800 });
+      setAiOutput(content);
+      setResumeText(content);
+    } catch (e: any) {
+      setAiOutput(`Error: ${e?.message || 'Failed to tailor'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const normalizeSpacing = () => {
+    setResumeText(prev => prev.replace(/\s+$/gm, "").replace(/\n{3,}/g, "\n\n"));
+  };
+  const bulletify = () => {
+    setResumeText(prev => prev.split("\n").map(line => {
+      if (!line.trim()) return line;
+      if (/^[\u2022\-\*]/.test(line.trim())) return line;
+      return `• ${line.trim()}`;
+    }).join("\n"));
+  };
+  const sectionize = () => {
+    setResumeText(prev => prev.replace(/^(summary|experience|education|skills|projects|certifications)\b/gi, (m) => m.toUpperCase()));
+  };
+  const copyResume = async () => { try { await navigator.clipboard.writeText(resumeText); } catch {} };
+  const copyOutput = async () => { try { await navigator.clipboard.writeText(aiOutput); } catch {} };
+
+  const handleUploadToEditor = async (file: File) => {
+    const tryExtractText = async (f: File) => {
+      if (f.type === 'text/plain') { try { return await f.text(); } catch { return ''; } }
+      if (f.type === 'application/pdf') {
+        // @ts-ignore
+        const pdfjs = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.mjs');
+        // @ts-ignore
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.mjs';
+        const buf = await file.arrayBuffer();
+        // @ts-ignore
+        const doc = await pdfjs.getDocument({ data: buf }).promise;
+        let text = '';
+        for (let i = 1; i <= doc.numPages; i++) {
+          const page = await doc.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map((it: any) => it.str);
+          text += strings.join(' ') + '\n';
+        }
+        return text;
+      }
+      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.toLowerCase().endsWith('.docx')) {
+        // @ts-ignore
+        const mammoth = (await import(/* @vite-ignore */ 'https://unpkg.com/mammoth/mammoth.browser.min.js')).default || (window as any).mammoth;
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        return result.value || '';
+      }
+      return '';
+    };
+    const text = await tryExtractText(file);
+    if (text.trim()) setResumeText(text);
+  };
+
+  const handleCreateResume = async () => {
+    setIsGenerating(true);
+    try {
+      const system = { role: 'system', content: 'You create professional ATS-friendly resumes. Use the provided answers to produce a complete resume with clean sections, concise bullets, and quantified impact. No hallucinations.' } as const;
+      const user = { role: 'user', content: `Create a resume from this questionnaire. Return only the resume text.
+
+Name: ${createForm.fullName}
+Headline: ${createForm.headline}
+Contact: ${createForm.email} | ${createForm.phone} | ${createForm.location}
+Summary: ${createForm.summary}
+Experience: ${createForm.experience}
+Education: ${createForm.education}
+Skills: ${createForm.skills}` } as const;
+      const content = await chatComplete([system as any, user as any], { temperature: 0.5, maxTokens: 1600 });
+      setResumeText(content);
+      setActiveMode('edit');
+    } catch (e: any) {
+      setAiOutput(`Error: ${e?.message || 'Failed to create resume'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleEnrich = async () => {
+    if (!enrichQuery.trim() || !isPdlConfigured()) return;
+    setIsEnriching(true);
+    try {
+      const params: Record<string,string> = {};
+      if (/@/.test(enrichQuery)) params.email = enrichQuery.trim();
+      else if (/linkedin\.com\//i.test(enrichQuery)) params.profile = enrichQuery.trim();
+      else params.name = enrichQuery.trim();
+      const data = await pdlEnrichPerson(params);
+      const name = data?.full_name || data?.name || createForm.fullName;
+      const headline = data?.job_title || data?.title || createForm.headline;
+      const loc = data?.location_name || data?.location?.name || createForm.location;
+      const skills = (data?.skills || []).slice(0, 20).join(", ");
+      const exp = (data?.experience || [])
+        .slice(0, 3)
+        .map((e: any) => `${e?.company} — ${e?.title} (${e?.start_date || ''}–${e?.end_date || 'Present'})\n• ${[e?.summary||''].filter(Boolean).join(' ')}`)
+        .join("\n\n");
+      const edu = (data?.education || [])
+        .slice(0, 2)
+        .map((e: any) => `${e?.school} — ${e?.degree || ''} ${e?.graduation_year ? '('+e?.graduation_year+')' : ''}`)
+        .join("\n");
+      const summary = data?.summary || createForm.summary;
+      const synthesized = `NAME\n${name || ''}\n\nHEADLINE\n${headline || ''}\n\nSUMMARY\n${summary || ''}\n\nEXPERIENCE\n${exp || ''}\n\nEDUCATION\n${edu || ''}\n\nSKILLS\n${skills || ''}`;
+      if (!resumeText.trim()) setResumeText(synthesized);
+      setCreateForm(cf => ({
+        ...cf,
+        fullName: name || cf.fullName,
+        headline: headline || cf.headline,
+        location: loc || cf.location,
+        summary: summary || cf.summary,
+        experience: exp || cf.experience,
+        education: edu || cf.education,
+        skills: skills || cf.skills,
+      }));
+    } catch (e: any) {
+      setAiOutput(`PDL enrich failed: ${e?.message || 'error'}`);
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -117,7 +294,10 @@ const ResumeBuilder = () => {
                     {(job.requirements||[]).slice(0,6).map((r,i)=>(<Badge key={i} variant="secondary">{r}</Badge>))}
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => setJob(null)} className="w-full sm:w-auto">Clear</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleQuickApply} disabled={isGenerating}><Sparkles className="h-4 w-4 mr-2" /> Quick Tailor</Button>
+                  <Button variant="outline" onClick={() => setJob(null)} className="w-full sm:w-auto">Clear</Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -134,25 +314,72 @@ const ResumeBuilder = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Your Resume</CardTitle>
-            <CardDescription>Paste your resume text. The AI highlighter will annotate issues in color.</CardDescription>
+            <CardDescription>Upload or paste, then edit live. Use the toolbar to clean formatting.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Textarea value={resumeText} onChange={(e)=>setResumeText(e.target.value)} className="min-h-[240px]" placeholder="Paste your resume..." />
-                <div className="flex gap-2 flex-col sm:flex-row">
-                  <Button onClick={runAnnotations} disabled={isAnnotating} className="w-full sm:w-auto">
+          <CardContent className="space-y-4">
+            {(!import.meta.env.VITE_OPENAI_API_KEY || (!isPdlConfigured() && enrichQuery)) && (
+              <div className="rounded-md border bg-warning/10 text-warning-foreground px-3 py-2 text-xs">
+                {!import.meta.env.VITE_OPENAI_API_KEY ? 'Missing VITE_OPENAI_API_KEY — AI features will be limited. ' : ''}
+                {!isPdlConfigured() && enrichQuery ? 'Missing VITE_PDL_API_KEY — enrichment disabled.' : ''}
+              </div>
+            )}
+            <Tabs value={activeMode} onValueChange={(v)=>setActiveMode(v as any)}>
+              <TabsList className="mb-4 flex flex-wrap gap-2">
+                <TabsTrigger value="edit">Edit Existing</TabsTrigger>
+                <TabsTrigger value="create">Create New</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="edit" className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex items-center gap-2 border rounded-md px-3 py-2 cursor-pointer">
+                    <Upload className="h-4 w-4" />
+                    <span>Upload to Editor</span>
+                    <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if (f) handleUploadToEditor(f); }} />
+                  </label>
+                  <Button variant="outline" onClick={sectionize}><Scissors className="h-4 w-4 mr-2" /> Section Headings</Button>
+                  <Button variant="outline" onClick={bulletify}><List className="h-4 w-4 mr-2" /> Bulletify Lines</Button>
+                  <Button variant="outline" onClick={normalizeSpacing}><AlignJustify className="h-4 w-4 mr-2" /> Normalize Spacing</Button>
+                  <Button onClick={runAnnotations} disabled={isAnnotating}>
                     {isAnnotating ? (<><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Analyzing...</>) : (<><HighlighterIcon className="h-4 w-4 mr-2" />Highlight Improvements</>)}
                   </Button>
-                  <Button onClick={handleGenerate} disabled={isGenerating || !resumeText} className="w-full sm:w-auto">
+                  {isPdlConfigured() && (
+                    <>
+                      <Input placeholder="Enrich by email/LinkedIn/name" value={enrichQuery} onChange={(e)=>setEnrichQuery(e.target.value)} className="w-56" />
+                      <Button variant="outline" onClick={handleEnrich} disabled={isEnriching || !enrichQuery.trim()}>{isEnriching ? 'Enriching…' : 'Enrich'}</Button>
+                    </>
+                  )}
+                  <Button variant="outline" onClick={copyResume}>Copy</Button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Textarea value={resumeText} onChange={(e)=>setResumeText(e.target.value)} className="min-h-[280px]" placeholder="Paste your resume..." />
+                  <div className="border rounded-md p-2 overflow-auto max-h-[60vh]">
+                    <ResumeHighlighter text={resumeText} annotations={annotations} onChange={setResumeText} />
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={handleGenerate} disabled={isGenerating || !resumeText}>
                     <Wand2 className="h-4 w-4 mr-2" /> {isGenerating ? 'Generating...' : 'Generate Tailored Resume'}
                   </Button>
                 </div>
-              </div>
-              <div className="border rounded-md p-2 overflow-auto max-h-[60vh]">
-                <ResumeHighlighter text={resumeText} annotations={annotations} onChange={setResumeText} />
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="create" className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Input placeholder="Full Name" value={createForm.fullName} onChange={(e)=>setCreateForm({...createForm, fullName:e.target.value})} />
+                  <Input placeholder="Headline (e.g., Frontend Developer)" value={createForm.headline} onChange={(e)=>setCreateForm({...createForm, headline:e.target.value})} />
+                  <Input placeholder="Email" value={createForm.email} onChange={(e)=>setCreateForm({...createForm, email:e.target.value})} />
+                  <Input placeholder="Phone" value={createForm.phone} onChange={(e)=>setCreateForm({...createForm, phone:e.target.value})} />
+                  <Input placeholder="Location" value={createForm.location} onChange={(e)=>setCreateForm({...createForm, location:e.target.value})} />
+                </div>
+                <Textarea placeholder="Short professional summary" value={createForm.summary} onChange={(e)=>setCreateForm({...createForm, summary:e.target.value})} />
+                <Textarea placeholder="Experience (roles, bullets, achievements)" value={createForm.experience} onChange={(e)=>setCreateForm({...createForm, experience:e.target.value})} className="min-h-[140px]" />
+                <Textarea placeholder="Education (degree, school, year)" value={createForm.education} onChange={(e)=>setCreateForm({...createForm, education:e.target.value})} />
+                <Textarea placeholder="Skills (comma separated)" value={createForm.skills} onChange={(e)=>setCreateForm({...createForm, skills:e.target.value})} />
+                <div className="flex gap-2">
+                  <Button onClick={handleCreateResume} disabled={isGenerating}><Wand2 className="h-4 w-4 mr-2" /> {isGenerating ? 'Creating...' : 'Create Resume'}</Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -162,6 +389,10 @@ const ResumeBuilder = () => {
             <CardDescription>Copy and refine as needed</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-muted-foreground">Your AI-tailored resume will appear here</div>
+              <Button size="sm" variant="outline" onClick={copyOutput}>Copy</Button>
+            </div>
             <Textarea value={aiOutput} onChange={(e)=>setAiOutput(e.target.value)} className="min-h-[400px] font-mono text-sm" placeholder="Your AI-tailored resume will appear here" />
           </CardContent>
         </Card>
@@ -170,4 +401,4 @@ const ResumeBuilder = () => {
   );
 };
 
-export default ResumeBuilder; 
+export default ResumeBuilder;
