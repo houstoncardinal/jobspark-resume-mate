@@ -2,21 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ResumeAI - AI-Powered Job Search & Resume Optimizer</title>
-    <meta name="description" content="Search jobs on Indeed, optimize your resume with AI, and beat ATS scanners. Get better job matches with our intelligent resume optimization system." />
-    <meta name="author" content="ResumeAI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <title>Gigm8 — Find Jobs, Match & Optimize Your Resume</title>
+    <meta name="description" content="Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time." />
+    <meta name="keywords" content="jobs, job search, resume optimizer, ATS, AI resume, job board, career, hiring, remote jobs" />
+    <link rel="canonical" href="https://jobspark.app/" />
 
-    <meta property="og:title" content="ResumeAI - AI-Powered Job Search & Resume Optimizer" />
-    <meta property="og:description" content="Search jobs on Indeed, optimize your resume with AI, and beat ATS scanners. Get better job matches with our intelligent resume optimization system." />
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:url" content="https://jobspark.app/" />
+    <meta property="og:title" content="Gigm8 — Find Jobs, Match & Optimize Your Resume" />
+    <meta property="og:description" content="Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time." />
+    <meta property="og:image" content="/placeholder.svg" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+    <meta name="twitter:title" content="Gigm8 — Find Jobs, Match & Optimize Your Resume" />
+    <meta name="twitter:description" content="Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time." />
+    <meta name="twitter:image" content="/placeholder.svg" />
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Gigm8",
+        "url": "https://jobspark.app/",
+        "logo": "https://jobspark.app/favicon.ico",
+        "sameAs": [
+          "https://twitter.com/",
+          "https://www.linkedin.com/"
+        ]
+      }
+    </script>
+    <!-- JSON-LD: WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Gigm8",
+        "url": "https://jobspark.app/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://jobspark.app/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

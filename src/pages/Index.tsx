@@ -7,7 +7,9 @@ import { ResumeOptimizer } from "@/components/ResumeOptimizer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Search as SearchIcon, FileText, Sparkles } from "lucide-react";
+import { CheckCircle2, Search as SearchIcon, FileText, Sparkles, HelpCircle } from "lucide-react";
+import { setSeo, injectJsonLd } from "@/lib/seo";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("search");
@@ -15,6 +17,25 @@ const Index = () => {
   const [resumeText, setResumeText] = useState<string>("");
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setSeo({
+      title: "JobSpark Resume Mate — Find Jobs, Match & Optimize Your Resume",
+      description: "Search quality job listings, analyze your resume against a job, and use AI to optimize in real time.",
+      canonical: "https://jobspark.app/",
+    });
+    injectJsonLd('jsonld-website', {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "JobSpark Resume Mate",
+      "url": "https://jobspark.app/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://jobspark.app/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    });
+  }, []);
 
   // Load persisted resume text
   useEffect(() => {
@@ -162,7 +183,7 @@ const Index = () => {
                 <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="resume" className="relative">
+            <TabsTrigger value="resume" className="relative" id="upload">
               Resume Upload
               {(uploadedResume || resumeText) && (
                 <div className="absolute -top-1 -right-1 h-3 w-3 bg-success rounded-full" />
@@ -171,6 +192,7 @@ const Index = () => {
             <TabsTrigger 
               value="match" 
               className="relative"
+              id="match"
               disabled={!(uploadedResume || resumeText) || !selectedJob}
             >
               Match Analysis
@@ -212,6 +234,22 @@ const Index = () => {
             />
           </TabsContent>
         </Tabs>
+
+        <section id="help" className="mt-10 border rounded-lg p-5 bg-muted/20">
+          <div className="flex items-center gap-2 mb-2">
+            <HelpCircle className="h-5 w-5" />
+            <h2 className="text-lg font-semibold">How it works</h2>
+          </div>
+          <ol className="list-decimal pl-5 space-y-1 text-sm text-muted-foreground">
+            <li>Search for a role using keywords. Use Filters to pick Region, Remote, or your location.</li>
+            <li>Select a job you like. We save it and show full details.</li>
+            <li>Upload or paste your resume text. We auto-extract text from PDF/DOCX when possible.</li>
+            <li>Open Match Analysis to see scores, keyword gaps, and suggestions.</li>
+            <li>Open the Resume Builder to see color-coded highlights and apply AI fixes or generate a tailored version.</li>
+          </ol>
+        </section>
+
+        <Footer />
       </main>
     </div>
   );

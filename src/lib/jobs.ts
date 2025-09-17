@@ -77,7 +77,23 @@ interface ZipRecruiterJob {
   salary_max?: number;
 }
 
+interface JoobleResponse {
+  jobs?: Array<{
+    id?: string;
+    title?: string;
+    company?: string;
+    location?: string;
+    updated?: string;
+    salary?: string;
+    link?: string;
+    snippet?: string;
+  }>;
+}
+
 const ZIP_API_KEY = import.meta.env.VITE_ZIPRECRUITER_API_KEY as string | undefined;
+const JOOBLE_API_KEY = import.meta.env.VITE_JOOBLE_API_KEY as string | undefined;
+const USAJOBS_API_KEY = import.meta.env.VITE_USAJOBS_API_KEY as string | undefined;
+const USAJOBS_USER_AGENT = (import.meta.env.VITE_USAJOBS_USER_AGENT as string | undefined) || "";
 
 const normalizeText = (v: string | undefined | null) => (v || "").toLowerCase().trim();
 
@@ -199,6 +215,71 @@ const zipRecruiterSearch = async (query: string, location: string): Promise<Norm
   }));
 };
 
+const joobleSearch = async (query: string, location: string): Promise<NormalizedJob[]> => {
+  if (!JOOBLE_API_KEY) return [];
+  const body = {
+    keywords: query || "",
+    location: location || "",
+    page: 1,
+    radius: 50,
+  } as any;
+  const url = `https://jooble.org/api/${JOOBLE_API_KEY}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Jooble error: ${res.status}`);
+  const data = await res.json() as JoobleResponse;
+  const items = data.jobs || [];
+  return items.map(j => ({
+    id: j.id || `${j.company || ''}-${j.title || ''}-${j.location || ''}`,
+    title: j.title || "",
+    company: j.company || "",
+    location: j.location || "",
+    salary: j.salary,
+    posted: j.updated ? new Date(j.updated).toDateString() : undefined,
+    description: j.snippet,
+    source: "jooble",
+    url: j.link,
+  }));
+};
+
+const usaJobsSearch = async (query: string, location: string): Promise<NormalizedJob[]> => {
+  if (!USAJOBS_USER_AGENT || !USAJOBS_API_KEY) return [];
+  const params = new URLSearchParams();
+  if (query) params.set("Keyword", query);
+  if (location) params.set("LocationName", location);
+  params.set("ResultsPerPage", "50");
+  const url = `https://data.usajobs.gov/api/search?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: {
+      'Host': 'data.usajobs.gov',
+      'User-Agent': USAJOBS_USER_AGENT,
+      'Authorization-Key': USAJOBS_API_KEY,
+      'Accept': 'application/json',
+    },
+  });
+  if (!res.ok) throw new Error(`USAJobs error: ${res.status}`);
+  const data = await res.json() as any;
+  const items = data?.SearchResult?.SearchResultItems || [];
+  return items.map((it: any) => {
+    const j = it.MatchedObjectDescriptor || {};
+    return {
+      id: String(j.PositionID || j.PositionURI || Math.random()),
+      title: j.PositionTitle || "",
+      company: (j.OrganizationName || j.DepartmentName || "USAJobs") as string,
+      location: (j.PositionLocationDisplay || (j.PositionLocation || [])[0]?.LocationName || "") as string,
+      salary: j.PositionRemuneration && j.PositionRemuneration[0] ? `${j.PositionRemuneration[0].MinimumRange || ''}-${j.PositionRemuneration[0].MaximumRange || ''} ${j.PositionRemuneration[0].RateIntervalCode || ''}` : undefined,
+      posted: j.PublicationStartDate ? new Date(j.PublicationStartDate).toDateString() : undefined,
+      description: j.UserArea?.Details?.JobSummary || j.QualificationSummary,
+      requirements: undefined,
+      source: "usajobs",
+      url: j.PositionURI,
+    } as NormalizedJob;
+  });
+};
+
 const dedupeJobs = (jobs: NormalizedJob[]): NormalizedJob[] => {
   const seen = new Set<string>();
   const result: NormalizedJob[] = [];
@@ -218,22 +299,12 @@ export const searchJobs = async (
 ): Promise<NormalizedJob[]> => {
   const { region = "any", remoteOnly = false } = options;
   let combined: NormalizedJob[] = [];
-  try {
-    const results = await remotiveSearch(query, location);
-    combined = combined.concat(results);
-  } catch {}
-  try {
-    const fallback = await arbeitnowSearch(query, location);
-    combined = combined.concat(fallback);
-  } catch {}
-  try {
-    const r = await remoteOkSearch(query);
-    combined = combined.concat(r);
-  } catch {}
-  try {
-    const zr = await zipRecruiterSearch(query, location);
-    combined = combined.concat(zr);
-  } catch {}
+  try { combined = combined.concat(await remotiveSearch(query, location)); } catch {}
+  try { combined = combined.concat(await arbeitnowSearch(query, location)); } catch {}
+  try { combined = combined.concat(await remoteOkSearch(query)); } catch {}
+  try { combined = combined.concat(await zipRecruiterSearch(query, location)); } catch {}
+  try { combined = combined.concat(await joobleSearch(query, location)); } catch {}
+  try { combined = combined.concat(await usaJobsSearch(query, location)); } catch {}
 
   let list = dedupeJobs(combined);
   if (remoteOnly) {

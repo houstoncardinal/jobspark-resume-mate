@@ -10,6 +10,7 @@ import { chatComplete } from "@/lib/ai";
 import type { NormalizedJob } from "@/lib/jobs";
 import { analyzeResumeTextForAnnotations, type AnnotationSpan } from "@/lib/annotation";
 import { ResumeHighlighter } from "@/components/ResumeHighlighter";
+import { setSeo, injectJsonLd } from "@/lib/seo";
 
 const getPersistedJob = (): NormalizedJob | null => {
   try {
@@ -31,6 +32,22 @@ const ResumeBuilder = () => {
   const [jobUrl, setJobUrl] = useState("");
   const [annotations, setAnnotations] = useState<AnnotationSpan[]>([]);
   const [isAnnotating, setIsAnnotating] = useState(false);
+
+  useEffect(() => {
+    setSeo({
+      title: "AI Resume Builder — JobSpark Resume Mate",
+      description: "Build and tailor your resume with AI in real time. Highlight improvements, apply fixes, and generate a tailored version for any job.",
+      canonical: "https://jobspark.app/builder",
+    });
+    injectJsonLd('jsonld-app', {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "JobSpark Resume Builder",
+      "applicationCategory": "WebApplication",
+      "operatingSystem": "Any",
+      "url": "https://jobspark.app/builder"
+    });
+  }, []);
 
   useEffect(() => { persistJob(job); }, [job]);
 

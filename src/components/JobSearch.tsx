@@ -153,7 +153,7 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
               </Button>
             </div>
 
-            <div className="rounded-lg border bg-muted/30 p-3">
+            <div id="filters" className="rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-sm font-medium mb-2"><Filter className="h-4 w-4" /> Filters</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex items-center gap-2">
