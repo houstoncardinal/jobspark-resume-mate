@@ -304,67 +304,64 @@ export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
         )}
         {pageJobs.map((job) => (
           <Card key={job.id} className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 md:p-6">
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                      <button onClick={() => openDetails(job)} className="text-left">
-                        <h3 className="text-lg sm:text-xl font-semibold text-foreground hover:underline break-words">{job.title}</h3>
-                      </button>
-                      <Badge variant="secondary" className="capitalize self-start">{job.source}</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <Building2 className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{job.company}</span>
-                      </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{job.location || "Remote"}</span>
-                      </div>
-                      {job.salary && (
-                        <div className="flex items-center gap-1 min-w-0">
-                          <DollarSign className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{job.salary}</span>
-                        </div>
-                      )}
-                      {job.posted && (
-                        <div className="flex items-center gap-1 min-w-0">
-                          <Clock className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{job.posted}</span>
-                        </div>
-                      )}
-                    </div>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <button onClick={() => openDetails(job)} className="text-left">
+                      <h3 className="text-xl font-semibold text-foreground hover:underline">{job.title}</h3>
+                    </button>
+                    <Badge variant="secondary" className="capitalize">{job.source}</Badge>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
-                    {job.url && (
-                      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1">
-                          View <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
+                  <div className="flex items-center gap-4 text-muted-foreground mb-3">
+                    <div className="flex items-center gap-1">
+                      <Building2 className="h-4 w-4" />
+                      <span>{job.company}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>{job.location || "Remote"}</span>
+                    </div>
+                    {job.salary && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        <span>{job.salary}</span>
+                      </div>
                     )}
-                    <Button 
-                      onClick={() => onJobSelect(job)}
-                      variant={selectedJob?.id === job.id ? "default" : "outline"}
-                      size="sm"
-                      className={`w-full sm:w-auto ${selectedJob?.id === job.id ? "bg-success hover:bg-success/90" : ""}`}
-                    >
-                      {selectedJob?.id === job.id ? "Selected ✓" : "Select Job"}
-                    </Button>
+                    {job.posted && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{job.posted}</span>
+                      </div>
+                    )}
                   </div>
+                  {job.description && (
+                    <p className="text-foreground mb-3 line-clamp-3" dangerouslySetInnerHTML={{ __html: job.description }} />
+                  )}
+                  {job.requirements && job.requirements.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {job.requirements.slice(0, 6).map((req, index) => (
+                        <Badge key={index} variant="secondary">{req}</Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {job.description && (
-                  <p className="text-foreground text-sm line-clamp-3" dangerouslySetInnerHTML={{ __html: job.description }} />
-                )}
-                {job.requirements && job.requirements.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {job.requirements.slice(0, 6).map((req, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">{req}</Badge>
-                    ))}
-                  </div>
-                )}
+                <div className="ml-4 flex gap-2">
+                  {job.url && (
+                    <Button asChild variant="outline">
+                      <a href={job.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                        View <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={() => onJobSelect(job)}
+                    variant={selectedJob?.id === job.id ? "default" : "outline"}
+                    className={selectedJob?.id === job.id ? "bg-success hover:bg-success/90" : ""}
+                  >
+                    {selectedJob?.id === job.id ? "Selected ✓" : "Select Job"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

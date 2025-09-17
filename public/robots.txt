@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://jobspark.app/sitemap.xml
+Sitemap: https://gigm8.com/sitemap.xml

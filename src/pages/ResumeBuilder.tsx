@@ -187,6 +187,24 @@ Return: A tailored resume in clean plain text with strong section headers and su
     a.download = `resume-${Date.now()}.txt`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
+  const exportDocx = async () => {
+    try {
+      // Load docx UMD bundle from CDN at runtime
+      // @ts-ignore
+      const docx = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js');
+      const { Document, Paragraph, Packer } = (docx as any);
+      const lines = (resumeText || '').split('\n');
+      const children = lines.map((l: string) => new Paragraph({ text: l }));
+      const doc = new Document({ sections: [{ properties: {}, children }] });
+      const blob = await Packer.toBlob(doc);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `resume-${Date.now()}.docx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    } catch (e) {
+      console.error(e);
+    }
+  };
   const printPdf = () => {
     const w = window.open('', '_blank');
     if (!w) return;
@@ -432,6 +450,7 @@ Skills: ${createForm.skills}` } as const;
                   )}
                   <Button variant="outline" onClick={copyResume}>Copy</Button>
                   <Button variant="outline" onClick={exportTxt}>Export TXT</Button>
+                  <Button variant="outline" onClick={exportDocx}>Export DOCX</Button>
                   <Button variant="outline" onClick={printPdf}>Print PDF</Button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -30,6 +30,9 @@ export const Header = () => {
             <Link to="/blog" className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors">
               <span className="text-sm">Blog</span>
             </Link>
+            <Link to="/applied" className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors">
+              <span className="text-sm">Applied Jobs</span>
+            </Link>
           </nav>
 
           <Button asChild variant="default" className="shadow">
