@@ -267,18 +267,14 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          {/* Logo - Image Only */}
+          <div className="flex items-center">
+            <Link to="/" className="hover:opacity-80 transition-opacity">
               <img 
                 src="/logo.png" 
                 alt="Gigm8 Logo" 
-                className="h-10 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold tracking-tight">Gigm8</h1>
-                <p className="text-xs text-muted-foreground">AI Career Platform</p>
-              </div>
             </Link>
           </div>
 
