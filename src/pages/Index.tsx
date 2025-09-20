@@ -120,7 +120,7 @@ const Index = () => {
             <div className="relative">
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/bg.PNG" 
+                  src="/bg.jpg" 
                   alt="Professional job search and career development" 
                   className="w-full h-auto object-cover"
                 />
