@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { computeMatch, extractJobKeywords } from "@/lib/match";
-import { chatComplete } from "@/lib/ai";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResumeOptimizerProps {
   resume: File | null;
@@ -80,11 +80,19 @@ export const ResumeOptimizer = ({ resume, selectedJob, resumeText: propResumeTex
         await new Promise(resolve => setTimeout(resolve, 250));
         setOptimizationProgress((i / steps) * 100);
       }
-      const system = { role: "system", content: "You are an expert resume writer and ATS optimization assistant. Preserve all truthful experience and details from the original resume. Improve clarity, formatting, measurable impact, and keyword alignment to the target job while keeping content accurate and non-fabricated." } as const;
-      const user = { role: "user", content: `Original Resume (verbatim):\n${resumeText}\n\nTarget Job:\nTitle: ${selectedJob.title}\nCompany: ${selectedJob.company}\nLocation: ${selectedJob.location || ''}\nRequirements: ${(extractJobKeywords(selectedJob, 24)).join(', ')}\nDescription (raw): ${(selectedJob.description||'').replace(/<[^>]+>/g,' ')}\n\nTask:\n1) Produce an optimized resume in clean plain text.\n2) Keep all original experience, titles, employers, dates, and achievements (only rephrase, re-order, and add missing relevant details if implied).\n3) Use strong action verbs, quantified impact where appropriate, and ATS-friendly section headers.\n4) Avoid hallucinations; do not invent employers or roles.\n5) Use succinct bullet points and consistent formatting.\n6) End output with no extra commentary.` } as const;
-      const content = await chatComplete([system as any, user as any], { temperature: 0.5, maxTokens: 2200 });
-      setOptimizedContent(content);
-      setDiffSegments(diffText(resumeText, content));
+      const { data, error } = await supabase.functions.invoke('ai-resume-optimizer', {
+        body: {
+          resumeText,
+          jobDescription: selectedJob.description,
+          jobTitle: selectedJob.title,
+          company: selectedJob.company
+        }
+      });
+
+      if (error) throw error;
+      
+      setOptimizedContent(data.optimizedResume || resumeText);
+      setDiffSegments(diffText(resumeText, data.optimizedResume || resumeText));
       setHasOptimized(true);
       toast({ title: "Resume Optimized!", description: "Preview the changes on the right." });
     } catch (e: any) {

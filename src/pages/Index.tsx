@@ -56,10 +56,8 @@ const Index = () => {
     return () => window.removeEventListener("resume-text-updated", handler as any);
   }, []);
 
-  const handleResumeUpload = (file: File, text: string) => {
+  const handleResumeUpload = (file: File) => {
     setUploadedResume(file);
-    setResumeText(text);
-    localStorage.setItem("resumeText", text);
     toast({
       title: "Resume Uploaded!",
       description: "Your resume has been processed and is ready for analysis.",

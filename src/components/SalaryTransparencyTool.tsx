@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DollarSign, TrendingUp, MapPin, Building2, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SalaryData {
   job_title: string;
@@ -25,6 +25,20 @@ interface SalaryInsight {
   description: string;
 }
 
+// Mock salary data for demonstration
+const getMockSalaryData = () => [
+  { job_title: "Software Engineer", location: "San Francisco", salary_min: 130000, salary_max: 180000, experience_level: "mid" },
+  { job_title: "Software Engineer", location: "New York", salary_min: 120000, salary_max: 170000, experience_level: "mid" },
+  { job_title: "Software Engineer", location: "Seattle", salary_min: 115000, salary_max: 160000, experience_level: "mid" },
+  { job_title: "Product Manager", location: "San Francisco", salary_min: 140000, salary_max: 190000, experience_level: "mid" },
+  { job_title: "Product Manager", location: "New York", salary_min: 130000, salary_max: 180000, experience_level: "mid" },
+  { job_title: "Data Scientist", location: "San Francisco", salary_min: 125000, salary_max: 175000, experience_level: "mid" },
+  { job_title: "Data Scientist", location: "Seattle", salary_min: 110000, salary_max: 150000, experience_level: "mid" },
+  { job_title: "Frontend Developer", location: "Austin", salary_min: 90000, salary_max: 130000, experience_level: "mid" },
+  { job_title: "DevOps Engineer", location: "Denver", salary_min: 100000, salary_max: 140000, experience_level: "mid" },
+  { job_title: "UX Designer", location: "San Francisco", salary_min: 95000, salary_max: 135000, experience_level: "mid" },
+];
+
 export const SalaryTransparencyTool = () => {
   const [jobTitle, setJobTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -34,6 +48,7 @@ export const SalaryTransparencyTool = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userSalary, setUserSalary] = useState("");
   const [userInsight, setUserInsight] = useState<SalaryInsight | null>(null);
+  const { toast } = useToast();
 
   const experienceLevels = [
     { value: "entry", label: "Entry Level (0-2 years)" },
@@ -46,65 +61,75 @@ export const SalaryTransparencyTool = () => {
     if (!jobTitle.trim()) return;
     
     setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('salary_insights')
-        .select('*')
-        .ilike('job_title', `%${jobTitle}%`)
-        .eq('experience_level', experienceLevel);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      try {
+        const mockData = getMockSalaryData();
+        
+        // Filter data based on job title and experience level
+        const filteredData = mockData.filter(item => 
+          item.job_title.toLowerCase().includes(jobTitle.toLowerCase()) &&
+          item.experience_level === experienceLevel
+        );
 
-      if (error) throw error;
+        // Process and aggregate data
+        const processed = filteredData.reduce((acc: Record<string, SalaryData>, item) => {
+          const key = `${item.job_title}-${item.location}`;
+          if (!acc[key]) {
+            acc[key] = {
+              job_title: item.job_title,
+              location: item.location,
+              salary_min: item.salary_min,
+              salary_max: item.salary_max,
+              count: 1,
+              avg_salary: (item.salary_min + item.salary_max) / 2
+            };
+          } else {
+            acc[key].count += 1;
+            acc[key].avg_salary = (acc[key].avg_salary + (item.salary_min + item.salary_max) / 2) / 2;
+          }
+          return acc;
+        }, {});
 
-      // Process and aggregate data
-      const processed = data.reduce((acc: Record<string, SalaryData>, item) => {
-        const key = `${item.job_title}-${item.location || 'Remote'}`;
-        if (!acc[key]) {
-          acc[key] = {
-            job_title: item.job_title,
-            location: item.location || 'Remote',
-            salary_min: item.salary_min || 0,
-            salary_max: item.salary_max || 0,
-            count: 0,
-            avg_salary: 0
-          };
+        const sorted = Object.values(processed)
+          .sort((a, b) => b.avg_salary - a.avg_salary)
+          .slice(0, 10);
+
+        setSalaryData(sorted);
+
+        // Generate insights
+        const allSalaries = filteredData
+          .map(d => (d.salary_min + d.salary_max) / 2)
+          .filter(s => s > 0)
+          .sort((a, b) => a - b);
+
+        if (allSalaries.length > 0) {
+          const percentile25 = allSalaries[Math.floor(allSalaries.length * 0.25)];
+          const percentile50 = allSalaries[Math.floor(allSalaries.length * 0.5)];
+          const percentile75 = allSalaries[Math.floor(allSalaries.length * 0.75)];
+          const percentile90 = allSalaries[Math.floor(allSalaries.length * 0.9)];
+
+          setInsights([
+            { percentile: 25, salary: percentile25, description: "Below market rate" },
+            { percentile: 50, salary: percentile50, description: "Market average" },
+            { percentile: 75, salary: percentile75, description: "Above average" },
+            { percentile: 90, salary: percentile90, description: "Top performer" }
+          ]);
         }
-        acc[key].count += 1;
-        acc[key].avg_salary = (acc[key].avg_salary + (item.salary_min + item.salary_max) / 2) / 2;
-        return acc;
-      }, {});
 
-      const sorted = Object.values(processed)
-        .sort((a, b) => b.avg_salary - a.avg_salary)
-        .slice(0, 10);
-
-      setSalaryData(sorted);
-
-      // Generate insights
-      const allSalaries = data
-        .map(d => (d.salary_min + d.salary_max) / 2)
-        .filter(s => s > 0)
-        .sort((a, b) => a - b);
-
-      if (allSalaries.length > 0) {
-        const percentile25 = allSalaries[Math.floor(allSalaries.length * 0.25)];
-        const percentile50 = allSalaries[Math.floor(allSalaries.length * 0.5)];
-        const percentile75 = allSalaries[Math.floor(allSalaries.length * 0.75)];
-        const percentile90 = allSalaries[Math.floor(allSalaries.length * 0.9)];
-
-        setInsights([
-          { percentile: 25, salary: percentile25, description: "Below market rate" },
-          { percentile: 50, salary: percentile50, description: "Market average" },
-          { percentile: 75, salary: percentile75, description: "Above average" },
-          { percentile: 90, salary: percentile90, description: "Top performer" }
-        ]);
+        trackEvent('salary_search', 'engagement', jobTitle);
+      } catch (error) {
+        console.error('Error fetching salary data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch salary data. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
-
-      trackEvent('salary_search', 'engagement', jobTitle);
-    } catch (error) {
-      console.error('Error fetching salary data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    }, 1000);
   };
 
   const calculateUserInsight = () => {
@@ -120,26 +145,13 @@ export const SalaryTransparencyTool = () => {
   const submitSalary = async () => {
     if (!userSalary || !jobTitle) return;
     
-    try {
-      const { error } = await supabase
-        .from('salary_insights')
-        .insert({
-          job_title: jobTitle,
-          location: location || null,
-          salary_min: parseFloat(userSalary),
-          salary_max: parseFloat(userSalary),
-          experience_level: experienceLevel,
-          source: 'user_submitted'
-        });
-
-      if (error) throw error;
-      
-      trackEvent('salary_submit', 'engagement', jobTitle);
-      // Refresh data
-      fetchSalaryData();
-    } catch (error) {
-      console.error('Error submitting salary:', error);
-    }
+    // Simulate successful submission
+    toast({
+      title: "Thank you!",
+      description: "Your salary data has been submitted anonymously and helps others.",
+    });
+    
+    trackEvent('salary_submit', 'engagement', jobTitle);
   };
 
   return (
@@ -208,7 +220,7 @@ export const SalaryTransparencyTool = () => {
                   <XAxis dataKey="location" />
                   <YAxis />
                   <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Average Salary']} />
-                  <Bar dataKey="avg_salary" fill="#0ea5e9" />
+                  <Bar dataKey="avg_salary" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
