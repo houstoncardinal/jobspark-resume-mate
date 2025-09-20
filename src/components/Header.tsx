@@ -171,13 +171,8 @@ export const Header = () => {
   };
 
   const handleQuickSignIn = (role: string) => {
-    if (role === 'general') {
-      setIsRoleSelectionOpen(true);
-    } else {
-      setSelectedRole(role);
-      setSelectedFeatures([]);
-      setIsAuthModalOpen(true);
-    }
+    // This will now be handled by the SignInDropdown component
+    // which navigates directly to the appropriate sign-in page
   };
 
   const handleSignOut = async () => {

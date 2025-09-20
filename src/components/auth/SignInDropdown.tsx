@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   LogIn, 
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface SignInDropdownProps {
-  onRoleSelect: (role: string) => void;
+  onRoleSelect?: (role: string) => void;
 }
 
 const signInOptions = [
@@ -26,7 +27,8 @@ const signInOptions = [
     color: 'from-gray-500 to-gray-600',
     bgColor: 'bg-gray-50',
     borderColor: 'border-gray-200',
-    iconColor: 'text-gray-600'
+    iconColor: 'text-gray-600',
+    path: '/signin'
   },
   {
     id: 'job_seeker',
@@ -36,7 +38,8 @@ const signInOptions = [
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
-    iconColor: 'text-blue-600'
+    iconColor: 'text-blue-600',
+    path: '/signin?role=job_seeker'
   },
   {
     id: 'recruiter',
@@ -46,7 +49,8 @@ const signInOptions = [
     color: 'from-purple-500 to-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
-    iconColor: 'text-purple-600'
+    iconColor: 'text-purple-600',
+    path: '/signin?role=recruiter'
   },
   {
     id: 'employer',
@@ -56,7 +60,8 @@ const signInOptions = [
     color: 'from-green-500 to-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
-    iconColor: 'text-green-600'
+    iconColor: 'text-green-600',
+    path: '/signin?role=employer'
   },
   {
     id: 'student',
@@ -66,7 +71,8 @@ const signInOptions = [
     color: 'from-orange-500 to-orange-600',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-200',
-    iconColor: 'text-orange-600'
+    iconColor: 'text-orange-600',
+    path: '/signin?role=student'
   }
 ];
 
@@ -76,6 +82,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigate = useNavigate();
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -92,8 +99,16 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
     };
   }, []);
 
-  const handleOptionClick = (roleId: string) => {
-    onRoleSelect(roleId);
+  const handleOptionClick = (option: typeof signInOptions[0]) => {
+    // Call the onRoleSelect callback if provided (for backward compatibility)
+    if (onRoleSelect) {
+      onRoleSelect(option.id);
+    }
+    
+    // Navigate to the specific sign-in page
+    navigate(option.path);
+    
+    // Close dropdowns
     setIsOpen(false);
     setIsMobileMenuOpen(false);
   };
@@ -187,7 +202,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
               return (
                 <button
                   key={option.id}
-                  onClick={() => handleOptionClick(option.id)}
+                  onClick={() => handleOptionClick(option)}
                   className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md group ${
                     option.bgColor
                   } hover:${option.bgColor.replace('50', '100')} border border-transparent hover:${option.borderColor}`}
@@ -264,7 +279,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
               return (
                 <button
                   key={option.id}
-                  onClick={() => handleOptionClick(option.id)}
+                  onClick={() => handleOptionClick(option)}
                   className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md group ${
                     option.bgColor
                   } hover:${option.bgColor.replace('50', '100')} border border-transparent hover:${option.borderColor}`}
@@ -339,7 +354,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
                   return (
                     <button
                       key={option.id}
-                      onClick={() => handleOptionClick(option.id)}
+                      onClick={() => handleOptionClick(option)}
                       className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 active:scale-95 ${
                         option.bgColor
                       } hover:${option.bgColor.replace('50', '100')} border border-transparent hover:${option.borderColor}`}
