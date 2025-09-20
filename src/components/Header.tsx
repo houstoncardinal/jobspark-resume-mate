@@ -142,10 +142,12 @@ export const Header = () => {
       </SheetTrigger>
       <SheetContent side="right" className="w-[300px] sm:w-[400px]">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">G8</span>
-            </div>
+          <SheetTitle className="flex items-center gap-3">
+            <img 
+              src="/logo.png" 
+              alt="Gigm8 Logo" 
+              className="w-8 h-8 object-contain"
+            />
             Gigm8
           </SheetTitle>
           <SheetDescription>
@@ -268,9 +270,11 @@ export const Header = () => {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">G8</span>
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="Gigm8 Logo" 
+                className="h-10 w-auto object-contain"
+              />
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold tracking-tight">Gigm8</h1>
                 <p className="text-xs text-muted-foreground">AI Career Platform</p>
