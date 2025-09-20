@@ -71,12 +71,6 @@ export const Header = () => {
       badge: "AI"
     },
     {
-      name: "Applied Jobs",
-      href: "/applied",
-      icon: Briefcase,
-      description: "Track your job applications"
-    },
-    {
       name: "Blog",
       href: "/blog",
       icon: BookOpen,
@@ -108,6 +102,12 @@ export const Header = () => {
       href: "/#optimize",
       icon: Sparkles,
       description: "AI-powered resume optimization"
+    },
+    {
+      name: "Applied Jobs",
+      href: "/applied",
+      icon: Briefcase,
+      description: "Track your job applications"
     }
   ];
 
