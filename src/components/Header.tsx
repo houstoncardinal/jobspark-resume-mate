@@ -22,7 +22,14 @@ import {
   Target,
   Brain,
   Users,
-  DollarSign
+  DollarSign,
+  Phone,
+  Mail,
+  MapPin,
+  Globe,
+  Shield,
+  Award,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -264,162 +271,215 @@ export const Header = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo - Image Only */}
-          <div className="flex items-center">
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <img 
-                src="/logo.png" 
-                alt="Gigm8 Logo" 
-                className="h-12 w-auto object-contain"
-              />
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {/* Main Pages */}
-            {mainNavigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-                {item.badge && (
-                  <Badge variant="secondary" className="text-xs">
-                    {item.badge}
-                  </Badge>
-                )}
-              </Link>
-            ))}
-
-            {/* Tools Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3 py-2">
-                  <Settings className="h-4 w-4" />
-                  Tools
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                {toolsNavigation.map((item) => (
-                  <DropdownMenuItem key={item.name} asChild>
-                    <a href={item.href} className="flex items-center gap-3 p-2">
-                      <item.icon className="h-4 w-4" />
-                      <div>
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">{item.description}</div>
-                      </div>
-                    </a>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Enterprise Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-3 py-2">
-                  <Crown className="h-4 w-4" />
-                  Enterprise
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                {enterpriseNavigation.map((item) => (
-                  <DropdownMenuItem key={item.name} asChild>
-                    <Link to={item.href} className="flex items-center gap-3 p-2">
-                      <item.icon className="h-4 w-4" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{item.name}</span>
-                          {item.badge && (
-                            <Badge variant="secondary" className="text-xs">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{item.description}</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
-
-          {/* Desktop CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/builder">
-                <FileText className="h-4 w-4 mr-2" />
-                Build Resume
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-              <Link to="/fortune500">
-                <Crown className="h-4 w-4 mr-2" />
-                View Strategy
-              </Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu */}
-          <div className="flex lg:hidden items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/builder">
-                <FileText className="h-4 w-4" />
-                <span className="sr-only">Build Resume</span>
-              </Link>
-            </Button>
-            <MobileMenu />
-          </div>
-        </div>
-
-        {/* Tablet Navigation Bar */}
-        <div className="hidden md:flex lg:hidden items-center justify-center py-3 border-t">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {mainNavigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-                {item.badge && (
-                  <Badge variant="secondary" className="text-xs">
-                    {item.badge}
-                  </Badge>
-                )}
-              </Link>
-            ))}
-            <Link
-              to="/fortune500"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <Crown className="h-4 w-4" />
-              Enterprise
-              <Badge variant="secondary" className="text-xs">
-                Enterprise
-              </Badge>
-            </Link>
+    <>
+      {/* Top Bar */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-10 text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Phone className="h-3 w-3" />
+                <span className="hidden sm:inline">+1 (555) 123-4567</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Mail className="h-3 w-3" />
+                <span className="hidden sm:inline">support@gigm8.com</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <MapPin className="h-3 w-3" />
+                <span className="hidden sm:inline">San Francisco, CA</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Shield className="h-3 w-3" />
+                <span className="hidden sm:inline">Enterprise Security</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Award className="h-3 w-3" />
+                <span className="hidden sm:inline">Trusted by 10,000+ Companies</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-600 font-medium">
+                <Clock className="h-3 w-3" />
+                <span className="hidden sm:inline">24/7 Support</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </header>
+
+      {/* Main Header */}
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex h-20 items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center">
+              <Link to="/" className="hover:opacity-90 transition-opacity">
+                <img 
+                  src="/logo.png" 
+                  alt="Gigm8 Logo" 
+                  className="h-14 w-auto object-contain"
+                />
+              </Link>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1">
+              {/* Main Pages */}
+              {mainNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-300 group ${
+                    isActive(item.href)
+                      ? "text-blue-600"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.name}
+                  {item.badge && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                  {/* Animated Underline */}
+                  <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ${
+                    isActive(item.href) 
+                      ? "w-full opacity-100" 
+                      : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+                  }`} />
+                </Link>
+              ))}
+
+              {/* Tools Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50">
+                    <Settings className="h-4 w-4" />
+                    Tools
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 bg-white border border-gray-200 shadow-lg">
+                  {toolsNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <a href={item.href} className="flex items-center gap-3 p-3 hover:bg-gray-50">
+                        <item.icon className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="text-xs text-gray-500">{item.description}</div>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Enterprise Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50">
+                    <Crown className="h-4 w-4" />
+                    Enterprise
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 bg-white border border-gray-200 shadow-lg">
+                  {enterpriseNavigation.map((item) => (
+                    <DropdownMenuItem key={item.name} asChild>
+                      <Link to={item.href} className="flex items-center gap-3 p-3 hover:bg-gray-50">
+                        <item.icon className="h-4 w-4 text-gray-600" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{item.name}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">{item.description}</div>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </nav>
+
+            {/* Desktop CTA Buttons */}
+            <div className="hidden lg:flex items-center gap-3">
+              <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                <Link to="/builder">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Build Resume
+                </Link>
+              </Button>
+              <Button asChild size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
+                <Link to="/fortune500">
+                  <Crown className="h-4 w-4 mr-2" />
+                  View Strategy
+                </Link>
+              </Button>
+            </div>
+
+            {/* Mobile Menu */}
+            <div className="flex lg:hidden items-center gap-2">
+              <Button asChild variant="outline" size="sm" className="border-gray-300">
+                <Link to="/builder">
+                  <FileText className="h-4 w-4" />
+                  <span className="sr-only">Build Resume</span>
+                </Link>
+              </Button>
+              <MobileMenu />
+            </div>
+          </div>
+
+          {/* Tablet Navigation Bar */}
+          <div className="hidden md:flex lg:hidden items-center justify-center py-4 border-t border-gray-200">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {mainNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-300 group ${
+                    isActive(item.href)
+                      ? "text-blue-600"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.name}
+                  {item.badge && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                  {/* Animated Underline */}
+                  <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ${
+                    isActive(item.href) 
+                      ? "w-full opacity-100" 
+                      : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+                  }`} />
+                </Link>
+              ))}
+              <Link
+                to="/fortune500"
+                className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-700 hover:text-blue-600 transition-all duration-300 group"
+              >
+                <Crown className="h-4 w-4" />
+                Enterprise
+                <Badge variant="secondary" className="text-xs">
+                  Enterprise
+                </Badge>
+                {/* Animated Underline */}
+                <span className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 w-0 opacity-0 group-hover:w-full group-hover:opacity-100 transition-all duration-500" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
   );
 };
