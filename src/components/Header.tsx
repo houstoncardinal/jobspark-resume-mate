@@ -32,7 +32,15 @@ import {
   Clock,
   LogIn,
   LogOut,
-  UserPlus
+  UserPlus,
+  ArrowRight,
+  LayoutDashboard,
+  UserSearch,
+  ClipboardList,
+  Calendar,
+  LineChart,
+  Rocket,
+  LifeBuoy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -188,160 +196,265 @@ export const Header = () => {
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="Gigm8 Logo" 
-              className="w-8 h-8 object-contain"
-            />
-            Gigm8
-          </SheetTitle>
-          <SheetDescription>
-            Your AI-powered career platform
-          </SheetDescription>
-        </SheetHeader>
-        
-        <div className="mt-6 space-y-6">
-          {/* User Section */}
-          {user ? (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-600">
-                    {user.full_name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
+      <SheetContent side="right" className="w-full sm:w-[400px] md:w-[500px] lg:w-[600px] p-0">
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/logo.png" 
+                  alt="Gigm8 Logo" 
+                  className="w-10 h-10 object-contain"
+                />
                 <div>
-                  <p className="font-medium">{user.full_name}</p>
-                  <p className="text-sm text-gray-600 capitalize">{user.role.replace('_', ' ')}</p>
+                  <h2 className="text-xl font-bold">Gigm8</h2>
+                  <p className="text-blue-100 text-sm">Your AI-powered career platform</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Link
-                  to="/dashboard"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors"
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* User Section */}
+            {user ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-lg font-bold text-white">
+                      {user.full_name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white">{user.full_name}</p>
+                    <p className="text-blue-100 text-sm capitalize">{user.role.replace('_', ' ')}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-transparent border-white/30 text-white hover:bg-white/20"
+                    onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button 
+                  className="bg-white text-blue-600 hover:bg-blue-50 flex-1" 
+                  onClick={() => {
+                    handleSignInClick();
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors text-red-600"
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="bg-transparent border-white/30 text-white hover:bg-white/20 flex-1"
+                  onClick={() => {
+                    handleSignInClick();
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
-                  Sign Out
-                </button>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Sign Up
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Navigation Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            {/* Main Pages */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Home className="h-5 w-5 text-blue-600" />
+                Main Pages
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {mainNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md group ${
+                      isActive(item.href) 
+                        ? "bg-blue-50 border-2 border-blue-200 shadow-md" 
+                        : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      isActive(item.href) ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      <item.icon className={`h-6 w-6 ${
+                        isActive(item.href) ? 'text-blue-600' : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                        {item.badge && (
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+                  </Link>
+                ))}
               </div>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <Button 
-                className="w-full" 
-                onClick={() => {
-                  handleSignInClick();
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => {
-                  handleSignInClick();
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Sign Up
-              </Button>
-            </div>
-          )}
 
-          {/* Main Navigation */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Main Pages</h3>
-            <div className="space-y-2">
-              {mainNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                    isActive(item.href) 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.name}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.badge}
-                        </Badge>
-                      )}
+            {/* Tools Section */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-purple-600" />
+                Tools & Features
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {toolsNavigation.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                  >
+                    <div className="w-12 h-12 bg-gray-100 group-hover:bg-gray-200 rounded-xl flex items-center justify-center">
+                      <item.icon className="h-6 w-6 text-gray-600" />
                     </div>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Tools Navigation */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Tools</h3>
-            <div className="space-y-2">
-              {toolsNavigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <item.icon className="h-5 w-5" />
-                  <div className="flex-1">
-                    <span className="font-medium">{item.name}</span>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Enterprise Navigation */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Enterprise</h3>
-            <div className="space-y-2">
-              {enterpriseNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                    isActive(item.href) 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.name}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.badge}
-                        </Badge>
-                      )}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                      <p className="text-sm text-gray-600">{item.description}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </Link>
-              ))}
+                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Enterprise Section */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Crown className="h-5 w-5 text-yellow-500" />
+                Enterprise Solutions
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {enterpriseNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md group ${
+                      isActive(item.href) 
+                        ? "bg-yellow-50 border-2 border-yellow-200 shadow-md" 
+                        : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      isActive(item.href) ? 'bg-yellow-100' : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      <item.icon className={`h-6 w-6 ${
+                        isActive(item.href) ? 'text-yellow-600' : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                        {item.badge && (
+                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-green-600" />
+                Quick Actions
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  asChild
+                  className="h-auto p-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Link to="/builder">
+                    <FileText className="h-5 w-5 mr-2" />
+                    <div className="text-left">
+                      <div className="font-semibold">Build Resume</div>
+                      <div className="text-xs opacity-90">AI-Powered</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  className="h-auto p-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Link to="/#job-search">
+                    <Search className="h-5 w-5 mr-2" />
+                    <div className="text-left">
+                      <div className="font-semibold">Find Jobs</div>
+                      <div className="text-xs opacity-90">10,000+ Jobs</div>
+                    </div>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <LifeBuoy className="h-5 w-5 text-blue-600" />
+                Get Support
+              </h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-blue-600" />
+                  <span>+1 (555) 123-4567</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <span>support@gigm8.com</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span>24/7 Support Available</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
