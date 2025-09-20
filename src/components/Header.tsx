@@ -54,10 +54,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { RoleSelectionModal } from "@/components/auth/RoleSelectionModal";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRoleSelectionOpen, setIsRoleSelectionOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('job_seeker');
+  const [selectedFeatures, setSelectedFeatures] = useState<any[]>([]);
   const location = useLocation();
   const { user, signOut } = useAuth();
 
@@ -146,6 +150,17 @@ export const Header = () => {
     }
   ];
 
+  const handleSignInClick = () => {
+    setIsRoleSelectionOpen(true);
+  };
+
+  const handleRoleSelect = (role: string, features: any[]) => {
+    setSelectedRole(role);
+    setSelectedFeatures(features);
+    setIsRoleSelectionOpen(false);
+    setIsAuthModalOpen(true);
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -213,7 +228,7 @@ export const Header = () => {
               <Button 
                 className="w-full" 
                 onClick={() => {
-                  setIsAuthModalOpen(true);
+                  handleSignInClick();
                   setIsMobileMenuOpen(false);
                 }}
               >
@@ -224,7 +239,7 @@ export const Header = () => {
                 variant="outline" 
                 className="w-full"
                 onClick={() => {
-                  setIsAuthModalOpen(true);
+                  handleSignInClick();
                   setIsMobileMenuOpen(false);
                 }}
               >
@@ -502,7 +517,7 @@ export const Header = () => {
                     variant="outline" 
                     size="sm" 
                     className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={handleSignInClick}
                   >
                     <LogIn className="h-4 w-4 mr-2" />
                     Sign In
@@ -510,7 +525,7 @@ export const Header = () => {
                   <Button 
                     size="sm" 
                     className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-                    onClick={() => setIsAuthModalOpen(true)}
+                    onClick={handleSignInClick}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
                     Sign Up
@@ -576,8 +591,20 @@ export const Header = () => {
         </div>
       </header>
 
+      {/* Role Selection Modal */}
+      <RoleSelectionModal 
+        isOpen={isRoleSelectionOpen} 
+        onClose={() => setIsRoleSelectionOpen(false)}
+        onRoleSelect={handleRoleSelect}
+      />
+
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)}
+        selectedRole={selectedRole}
+        selectedFeatures={selectedFeatures}
+      />
     </>
   );
 };
