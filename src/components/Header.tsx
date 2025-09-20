@@ -29,7 +29,10 @@ import {
   Globe,
   Shield,
   Award,
-  Clock
+  Clock,
+  LogIn,
+  LogOut,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -49,10 +52,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -139,6 +146,14 @@ export const Header = () => {
     }
   ];
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   const MobileMenu = () => (
     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
       <SheetTrigger asChild>
@@ -163,6 +178,62 @@ export const Header = () => {
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
+          {/* User Section */}
+          {user ? (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-blue-600">
+                    {user.full_name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium">{user.full_name}</p>
+                  <p className="text-sm text-gray-600 capitalize">{user.role.replace('_', ' ')}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors text-red-600"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setIsAuthModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => {
+                  setIsAuthModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Sign Up
+              </Button>
+            </div>
+          )}
+
           {/* Main Navigation */}
           <div>
             <h3 className="text-sm font-semibold text-muted-foreground mb-3">Main Pages</h3>
@@ -246,16 +317,6 @@ export const Header = () => {
                 </Link>
               ))}
             </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="pt-4 border-t">
-            <Button asChild className="w-full" variant="outline">
-              <Link to="/builder" onClick={() => setIsMobileMenuOpen(false)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Build Resume
-              </Link>
-            </Button>
           </div>
         </div>
       </SheetContent>
@@ -400,14 +461,62 @@ export const Header = () => {
               </DropdownMenu>
             </nav>
 
-            {/* Desktop CTA Button */}
-            <div className="hidden lg:flex items-center">
-              <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
-                <Link to="/builder">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Build Resume
-                </Link>
-              </Button>
+            {/* Desktop CTA Buttons */}
+            <div className="hidden lg:flex items-center gap-3">
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-600">
+                          {user.full_name.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                      <span className="hidden sm:inline">{user.full_name}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Profile Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                    onClick={() => setIsAuthModalOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu */}
@@ -466,6 +575,9 @@ export const Header = () => {
           </div>
         </div>
       </header>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );
 };
