@@ -55,6 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { RoleSelectionModal } from "@/components/auth/RoleSelectionModal";
+import { SignInDropdown } from "@/components/auth/SignInDropdown";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -159,6 +160,16 @@ export const Header = () => {
     setSelectedFeatures(features);
     setIsRoleSelectionOpen(false);
     setIsAuthModalOpen(true);
+  };
+
+  const handleQuickSignIn = (role: string) => {
+    if (role === 'general') {
+      setIsRoleSelectionOpen(true);
+    } else {
+      setSelectedRole(role);
+      setSelectedFeatures([]);
+      setIsAuthModalOpen(true);
+    }
   };
 
   const handleSignOut = async () => {
@@ -513,15 +524,7 @@ export const Header = () => {
                 </DropdownMenu>
               ) : (
                 <>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                    onClick={handleSignInClick}
-                  >
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Sign In
-                  </Button>
+                  <SignInDropdown onRoleSelect={handleQuickSignIn} />
                   <Button 
                     size="sm" 
                     className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"

@@ -58,7 +58,8 @@ const roleOptions = [
       'Interview Preparation / Tips',
       'Saved Jobs & Applications'
     ],
-    stats: '10,000+ Jobs'
+    stats: '10,000+ Jobs',
+    signInText: 'I\'m signing in as a Job Seeker'
   },
   {
     id: 'recruiter',
@@ -77,7 +78,8 @@ const roleOptions = [
       'Schedule Interviews',
       'Recruiter Dashboard / Analytics'
     ],
-    stats: '50,000+ Candidates'
+    stats: '50,000+ Candidates',
+    signInText: 'I\'m signing in as a Recruiter'
   },
   {
     id: 'employer',
@@ -96,7 +98,8 @@ const roleOptions = [
       'Team Management (HR/recruiter roles)',
       'Analytics (views, applications, hires)'
     ],
-    stats: '500+ Companies'
+    stats: '500+ Companies',
+    signInText: 'I\'m signing in as an Employer'
   },
   {
     id: 'student',
@@ -113,7 +116,8 @@ const roleOptions = [
       'Career Resources',
       'Mentorship / Networking'
     ],
-    stats: '2,000+ Internships'
+    stats: '2,000+ Internships',
+    signInText: 'I\'m signing in as a Student/Intern'
   }
 ];
 
@@ -137,21 +141,27 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
     onRoleSelect(roleId, features);
   };
 
+  const selectedRoleData = selectedRole ? roleOptions.find(r => r.id === selectedRole) : null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="text-center pb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Zap className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <img 
+              src="/logo.png" 
+              alt="Gigm8 Logo" 
+              className="w-16 h-16 object-contain"
+            />
+            <div>
+              <DialogTitle className="text-3xl font-bold text-gray-900">
+                Welcome to Gigm8
+              </DialogTitle>
+              <p className="text-lg text-gray-600 mt-2">
+                Choose your role to get started with personalized tools
+              </p>
             </div>
-            <DialogTitle className="text-3xl font-bold text-gray-900">
-              Welcome to Gigm8
-            </DialogTitle>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose your role to access personalized tools and features designed for your career needs
-          </p>
         </DialogHeader>
 
         <div className="space-y-8">
@@ -211,6 +221,24 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
               );
             })}
           </div>
+
+          {/* Selected Role Description */}
+          {selectedRoleData && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {selectedRoleData.signInText}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  You'll have access to all the tools and features designed specifically for {selectedRoleData.title.toLowerCase()}s
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                  <Shield className="h-4 w-4" />
+                  <span>Secure • Fast • Professional</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Trust Indicators */}
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6">
