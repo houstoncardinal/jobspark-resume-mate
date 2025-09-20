@@ -75,6 +75,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -98,25 +99,45 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
   };
 
   const handleMouseEnter = () => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setIsOpen(true);
   };
 
   const handleMouseLeave = () => {
-    // Add a small delay to allow moving to dropdown
-    setTimeout(() => {
-      if (!dropdownRef.current?.matches(':hover')) {
-        setIsOpen(false);
-      }
-    }, 100);
+    // Add a delay to allow moving to dropdown
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
   };
 
   const handleDropdownMouseEnter = () => {
+    // Clear any existing timeout when entering dropdown
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setIsOpen(true);
   };
 
   const handleDropdownMouseLeave = () => {
-    setIsOpen(false);
+    // Add a delay when leaving dropdown
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="relative group">
@@ -136,7 +157,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
         {/* Desktop Dropdown */}
         <div 
           ref={dropdownRef}
-          className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform origin-top ${
+          className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform origin-top z-50 ${
             isOpen 
               ? 'opacity-100 scale-100 translate-y-0' 
               : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
@@ -215,7 +236,7 @@ export const SignInDropdown: React.FC<SignInDropdownProps> = ({ onRoleSelect }) 
         {/* Tablet Dropdown - Centered */}
         <div 
           ref={dropdownRef}
-          className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform origin-top ${
+          className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 transform origin-top z-50 ${
             isOpen 
               ? 'opacity-100 scale-100 translate-y-0' 
               : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
