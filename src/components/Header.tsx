@@ -250,20 +250,12 @@ export const Header = () => {
 
           {/* CTA Buttons */}
           <div className="pt-4 border-t">
-            <div className="space-y-2">
-              <Button asChild className="w-full" variant="outline">
-                <Link to="/builder" onClick={() => setIsMobileMenuOpen(false)}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Build Resume
-                </Link>
-              </Button>
-              <Button asChild className="w-full">
-                <Link to="/fortune500" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Crown className="h-4 w-4 mr-2" />
-                  View Strategy
-                </Link>
-              </Button>
-            </div>
+            <Button asChild className="w-full" variant="outline">
+              <Link to="/builder" onClick={() => setIsMobileMenuOpen(false)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Build Resume
+              </Link>
+            </Button>
           </div>
         </div>
       </SheetContent>
@@ -408,18 +400,12 @@ export const Header = () => {
               </DropdownMenu>
             </nav>
 
-            {/* Desktop CTA Buttons */}
-            <div className="hidden lg:flex items-center gap-3">
+            {/* Desktop CTA Button */}
+            <div className="hidden lg:flex items-center">
               <Button asChild variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
                 <Link to="/builder">
                   <FileText className="h-4 w-4 mr-2" />
                   Build Resume
-                </Link>
-              </Button>
-              <Button asChild size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
-                <Link to="/fortune500">
-                  <Crown className="h-4 w-4 mr-2" />
-                  View Strategy
                 </Link>
               </Button>
             </div>
