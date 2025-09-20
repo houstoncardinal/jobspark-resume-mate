@@ -27,7 +27,11 @@ import {
   BookOpen,
   CreditCard,
   LogIn,
-  UserPlus
+  UserPlus,
+  ArrowRight,
+  Shield,
+  Star,
+  Zap
 } from 'lucide-react';
 
 interface RoleSelectionModalProps {
@@ -39,78 +43,86 @@ interface RoleSelectionModalProps {
 const roleOptions = [
   {
     id: 'job_seeker',
-    title: 'For Job Seekers',
+    title: 'Job Seeker',
     icon: Briefcase,
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
     iconColor: 'text-blue-600',
     description: 'Find your dream job and advance your career',
     features: [
-      { icon: Search, text: 'Find Jobs / Browse Openings' },
-      { icon: FileText, text: 'Build My Resume / CV' },
-      { icon: Upload, text: 'Upload Resume / Profile' },
-      { icon: Bell, text: 'Job Alerts & Notifications' },
-      { icon: Lightbulb, text: 'Interview Preparation / Tips' },
-      { icon: Bookmark, text: 'Saved Jobs & Applications' }
-    ]
+      'Find Jobs / Browse Openings',
+      'Build My Resume / CV',
+      'Upload Resume / Profile',
+      'Job Alerts & Notifications',
+      'Interview Preparation / Tips',
+      'Saved Jobs & Applications'
+    ],
+    stats: '10,000+ Jobs'
   },
   {
     id: 'recruiter',
-    title: 'For Recruiters',
+    title: 'Recruiter',
     icon: Users,
     color: 'from-purple-500 to-purple-600',
     bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
     iconColor: 'text-purple-600',
     description: 'Source and manage top talent efficiently',
     features: [
-      { icon: Plus, text: 'Post a Job' },
-      { icon: UserSearch, text: 'Search Candidates' },
-      { icon: ClipboardList, text: 'Manage Applications' },
-      { icon: CheckCircle, text: 'Shortlist Candidates' },
-      { icon: Calendar, text: 'Schedule Interviews' },
-      { icon: BarChart3, text: 'Recruiter Dashboard / Analytics' }
-    ]
+      'Post a Job',
+      'Search Candidates',
+      'Manage Applications',
+      'Shortlist Candidates',
+      'Schedule Interviews',
+      'Recruiter Dashboard / Analytics'
+    ],
+    stats: '50,000+ Candidates'
   },
   {
     id: 'employer',
-    title: 'For Companies / Employers',
+    title: 'Employer',
     icon: Building2,
     color: 'from-green-500 to-green-600',
     bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
     iconColor: 'text-green-600',
     description: 'Build your team and grow your business',
     features: [
-      { icon: BarChart3, text: 'Company Dashboard' },
-      { icon: Plus, text: 'Post Multiple Jobs' },
-      { icon: Globe, text: 'Brand Page (showcase company)' },
-      { icon: Database, text: 'Access Resume Database' },
-      { icon: Users, text: 'Team Management (HR/recruiter roles)' },
-      { icon: BarChart3, text: 'Analytics (views, applications, hires)' }
-    ]
+      'Company Dashboard',
+      'Post Multiple Jobs',
+      'Brand Page (showcase company)',
+      'Access Resume Database',
+      'Team Management (HR/recruiter roles)',
+      'Analytics (views, applications, hires)'
+    ],
+    stats: '500+ Companies'
   },
   {
     id: 'student',
-    title: 'For Students / Interns',
+    title: 'Student / Intern',
     icon: GraduationCap,
     color: 'from-orange-500 to-orange-600',
     bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
     iconColor: 'text-orange-600',
     description: 'Start your career journey with confidence',
     features: [
-      { icon: Briefcase, text: 'Internships & Entry-Level Jobs' },
-      { icon: FileText, text: 'Student Resume Builder' },
-      { icon: BookOpen, text: 'Career Resources' },
-      { icon: Users, text: 'Mentorship / Networking' }
-    ]
+      'Internships & Entry-Level Jobs',
+      'Student Resume Builder',
+      'Career Resources',
+      'Mentorship / Networking'
+    ],
+    stats: '2,000+ Internships'
   }
 ];
 
 const generalOptions = [
-  { icon: LogIn, text: 'Sign Up / Sign In', description: 'Access your account' },
-  { icon: CreditCard, text: 'Pricing / Plans', description: 'View our plans' },
-  { icon: HelpCircle, text: 'Help Center / Support', description: 'Get assistance' },
-  { icon: BookOpen, text: 'Blog / Career Advice', description: 'Read our insights' },
-  { icon: Settings, text: 'Settings / Profile', description: 'Manage your account' }
+  { icon: LogIn, text: 'Sign In', description: 'Access your account' },
+  { icon: CreditCard, text: 'Pricing', description: 'View our plans' },
+  { icon: HelpCircle, text: 'Support', description: 'Get assistance' },
+  { icon: BookOpen, text: 'Blog', description: 'Career insights' },
+  { icon: Settings, text: 'Settings', description: 'Manage account' }
 ];
 
 export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({ 
@@ -127,61 +139,72 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="text-center pb-6">
-          <DialogTitle className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to Gigm8
-          </DialogTitle>
-          <p className="text-lg text-gray-600">
-            Choose your role to get started with the right tools for your needs
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader className="text-center pb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+            <DialogTitle className="text-3xl font-bold text-gray-900">
+              Welcome to Gigm8
+            </DialogTitle>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Choose your role to access personalized tools and features designed for your career needs
           </p>
         </DialogHeader>
 
         <div className="space-y-8">
-          {/* Role Selection Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Role Selection Cards - Responsive Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {roleOptions.map((role) => {
               const IconComponent = role.icon;
+              const isSelected = selectedRole === role.id;
+              
               return (
                 <Card 
                   key={role.id}
-                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 ${
-                    selectedRole === role.id 
-                      ? 'border-blue-500 shadow-lg' 
+                  className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 border-2 ${
+                    isSelected 
+                      ? `${role.borderColor} shadow-xl ring-2 ring-blue-500 ring-opacity-50` 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => handleRoleClick(role.id, role.features)}
                 >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 ${role.bgColor} rounded-xl flex items-center justify-center`}>
-                        <IconComponent className={`h-8 w-8 ${role.iconColor}`} />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`w-12 h-12 ${role.bgColor} rounded-xl flex items-center justify-center`}>
+                        <IconComponent className={`h-6 w-6 ${role.iconColor}`} />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl font-bold text-gray-900">
-                          {role.title}
-                        </CardTitle>
-                        <CardDescription className="text-gray-600 mt-1">
-                          {role.description}
-                        </CardDescription>
-                      </div>
-                      {selectedRole === role.id && (
-                        <Badge className="bg-blue-600 text-white">
-                          Selected
-                        </Badge>
+                      {isSelected && (
+                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        </div>
                       )}
                     </div>
+                    <CardTitle className="text-lg font-bold text-gray-900 mb-1">
+                      {role.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-600 mb-2">
+                      {role.description}
+                    </CardDescription>
+                    <Badge className={`${role.bgColor} ${role.iconColor} border-0 text-xs font-medium`}>
+                      {role.stats}
+                    </Badge>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 gap-3">
-                      {role.features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <feature.icon className="h-5 w-5 text-gray-600" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {feature.text}
-                          </span>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      {role.features.slice(0, 3).map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0" />
+                          <span className="truncate">{feature}</span>
                         </div>
                       ))}
+                      {role.features.length > 3 && (
+                        <div className="text-xs text-gray-500 font-medium">
+                          +{role.features.length - 3} more features
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -189,19 +212,46 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
             })}
           </div>
 
-          {/* General Options */}
+          {/* Trust Indicators */}
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Shield className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">Enterprise Security</h3>
+                <p className="text-sm text-gray-600">Bank-level encryption and compliance</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Star className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">Trusted Platform</h3>
+                <p className="text-sm text-gray-600">Used by 100,000+ professionals</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Zap className="h-6 w-6 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">AI-Powered</h3>
+                <p className="text-sm text-gray-600">Advanced AI for better results</p>
+              </div>
+            </div>
+          </div>
+
+          {/* General Options - Compact Grid */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-              General Options
+              Additional Options
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {generalOptions.map((option, index) => (
                 <Card 
                   key={index}
                   className="cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-105 border border-gray-200 hover:border-gray-300"
                 >
                   <CardContent className="p-4 text-center">
-                    <option.icon className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                    <option.icon className="h-6 w-6 text-gray-600 mx-auto mb-2" />
                     <h4 className="font-medium text-gray-900 text-sm mb-1">
                       {option.text}
                     </h4>
@@ -219,17 +269,18 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
             <Button 
               variant="outline" 
               onClick={onClose}
-              className="px-8 py-3"
+              className="px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </Button>
             {selectedRole && (
               <Button 
                 onClick={() => onRoleSelect(selectedRole, [])}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg font-semibold"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
-                Continue with {roleOptions.find(r => r.id === selectedRole)?.title}
+                Continue as {roleOptions.find(r => r.id === selectedRole)?.title}
+                <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             )}
           </div>
