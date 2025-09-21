@@ -1,3 +1,28 @@
+// SEO Configuration and Utilities for GIGM8
+// Comprehensive SEO setup for all pages
+
+export interface SEOData {
+  title: string;
+  description: string;
+  keywords?: string;
+  canonical?: string;
+  robots?: string;
+  author?: string;
+  'og:title'?: string;
+  'og:description'?: string;
+  'og:image'?: string;
+  'og:url'?: string;
+  'og:type'?: string;
+  'og:site_name'?: string;
+  'twitter:card'?: string;
+  'twitter:title'?: string;
+  'twitter:description'?: string;
+  'twitter:image'?: string;
+  'twitter:site'?: string;
+  'twitter:creator'?: string;
+}
+
+// Dynamic SEO function
 export function setSeo({ title, description, canonical }: { title?: string; description?: string; canonical?: string }) {
   if (title) document.title = title;
   if (description) {
@@ -20,43 +45,9 @@ export function setSeo({ title, description, canonical }: { title?: string; desc
   }
 }
 
-export function injectJsonLd(id: string, data: object) {
-  let script = document.getElementById(id) as HTMLScriptElement | null;
-  if (!script) {
-    script = document.createElement('script');
-    script.id = id;
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
-  script.textContent = JSON.stringify(data);
-}
-
-export interface SEOData {
-  title: string;
-  description: string;
-  keywords?: string;
-  canonical: string;
-  robots?: string;
-  author?: string;
-  'og:title'?: string;
-  'og:description'?: string;
-  'og:image'?: string;
-  'og:url'?: string;
-  'og:type'?: string;
-  'og:site_name'?: string;
-  'twitter:card'?: string;
-  'twitter:title'?: string;
-  'twitter:description'?: string;
-  'twitter:image'?: string;
-  'twitter:site'?: string;
-  'twitter:creator'?: string;
-  'article:published_time'?: string;
-  'article:modified_time'?: string;
-  schema?: any;
-}
-
-export const PAGE_SEO: Record<string, SEOData> = {
-  '/': {
+// Page-specific SEO data
+export const PAGE_SEO = {
+  home: {
     title: 'Gigm8 — Find Jobs, Match & Optimize Your Resume',
     description: 'Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time.',
     keywords: 'jobs, job search, resume optimizer, ATS, AI resume, job board, career, hiring, remote jobs',
@@ -98,140 +89,100 @@ export const PAGE_SEO: Record<string, SEOData> = {
   },
   '/jobs': {
     title: 'Find Jobs - Search High-Quality Job Listings | Gigm8',
-    description: 'Discover thousands of job opportunities across various industries. Search by location, salary, company, and more.',
+    description: 'Discover thousands of job opportunities from top companies. Advanced search filters, real-time updates, and personalized job recommendations.',
     keywords: 'jobs, job search, employment, career opportunities, hiring',
     canonical: 'https://gigm8.com/jobs',
     robots: 'index, follow',
     author: 'Gigm8',
     'og:title': 'Find Jobs - Search High-Quality Job Listings | Gigm8',
-    'og:description': 'Discover thousands of job opportunities across various industries. Search by location, salary, company, and more.',
+    'og:description': 'Discover thousands of job opportunities from top companies. Advanced search filters, real-time updates, and personalized job recommendations.',
     'og:image': 'https://gigm8.com/thumbnail-og.png',
     'og:url': 'https://gigm8.com/jobs',
     'og:type': 'website',
     'og:site_name': 'Gigm8',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Find Jobs - Search High-Quality Job Listings | Gigm8',
-    'twitter:description': 'Discover thousands of job opportunities across various industries. Search by location, salary, company, and more.',
-    'twitter:image': 'https://gigm8.com/thumbnail-og.png',
-    'twitter:site': '@gigm8',
-    'twitter:creator': '@gigm8'
-  },
-  '/blog': {
-    title: 'Career Blog - Job Search Tips & Career Advice | Gigm8',
-    description: 'Get expert career advice, job search tips, and industry insights to advance your professional journey.',
-    keywords: 'career advice, job search tips, professional development, career blog',
-    canonical: 'https://gigm8.com/blog',
-    robots: 'index, follow',
-    author: 'Gigm8',
-    'og:title': 'Career Blog - Job Search Tips & Career Advice | Gigm8',
-    'og:description': 'Get expert career advice, job search tips, and industry insights to advance your professional journey.',
-    'og:image': 'https://gigm8.com/thumbnail-og.png',
-    'og:url': 'https://gigm8.com/blog',
-    'og:type': 'website',
-    'og:site_name': 'Gigm8',
-    'twitter:card': 'summary_large_image',
-    'twitter:title': 'Career Blog - Job Search Tips & Career Advice | Gigm8',
-    'twitter:description': 'Get expert career advice, job search tips, and industry insights to advance your professional journey.',
-    'twitter:image': 'https://gigm8.com/thumbnail-og.png',
-    'twitter:site': '@gigm8',
-    'twitter:creator': '@gigm8'
-  },
-  '/networking': {
-    title: 'Professional Networking Hub | Gigm8',
-    description: 'Connect with professionals, expand your network, and discover new career opportunities.',
-    keywords: 'professional networking, career connections, networking hub',
-    canonical: 'https://gigm8.com/networking',
-    robots: 'index, follow',
-    author: 'Gigm8',
-    'og:title': 'Professional Networking Hub | Gigm8',
-    'og:description': 'Connect with professionals, expand your network, and discover new career opportunities.',
-    'og:image': 'https://gigm8.com/thumbnail-og.png',
-    'og:url': 'https://gigm8.com/networking',
-    'og:type': 'website',
-    'og:site_name': 'Gigm8',
-    'twitter:card': 'summary_large_image',
-    'twitter:title': 'Professional Networking Hub | Gigm8',
-    'twitter:description': 'Connect with professionals, expand your network, and discover new career opportunities.',
+    'twitter:description': 'Discover thousands of job opportunities from top companies. Advanced search filters, real-time updates, and personalized job recommendations.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
   },
   '/resume-optimizer': {
     title: 'Resume Optimizer - AI-Powered Resume Analysis | Gigm8',
-    description: 'Upload your resume and get AI-powered optimization suggestions. Improve ATS compatibility, keyword density, and overall resume quality.',
-    keywords: 'resume optimizer, AI resume analysis, ATS optimization, resume improvement, keyword enhancement',
+    description: 'Optimize your resume with AI-powered analysis. Get instant feedback on ATS compatibility, keyword optimization, and formatting improvements.',
+    keywords: 'resume optimizer, AI resume analysis, ATS optimization, resume improvement',
     canonical: 'https://gigm8.com/resume-optimizer',
     robots: 'index, follow',
     author: 'Gigm8',
     'og:title': 'Resume Optimizer - AI-Powered Resume Analysis | Gigm8',
-    'og:description': 'Upload your resume and get AI-powered optimization suggestions. Improve ATS compatibility, keyword density, and overall resume quality.',
+    'og:description': 'Optimize your resume with AI-powered analysis. Get instant feedback on ATS compatibility, keyword optimization, and formatting improvements.',
     'og:image': 'https://gigm8.com/thumbnail-og.png',
     'og:url': 'https://gigm8.com/resume-optimizer',
     'og:type': 'website',
     'og:site_name': 'Gigm8',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Resume Optimizer - AI-Powered Resume Analysis | Gigm8',
-    'twitter:description': 'Upload your resume and get AI-powered optimization suggestions. Improve ATS compatibility, keyword density, and overall resume quality.',
+    'twitter:description': 'Optimize your resume with AI-powered analysis. Get instant feedback on ATS compatibility, keyword optimization, and formatting improvements.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
   },
   '/resume-templates': {
     title: 'Resume Templates - Professional Resume Designs | Gigm8',
-    description: 'Choose from professionally designed resume templates. Industry-specific designs for every career path.',
-    keywords: 'resume templates, professional resume design, resume format, job application templates',
+    description: 'Choose from our collection of professional resume templates. ATS-friendly designs that help you stand out to employers.',
+    keywords: 'resume templates, professional resume, ATS resume, resume design',
     canonical: 'https://gigm8.com/resume-templates',
     robots: 'index, follow',
     author: 'Gigm8',
     'og:title': 'Resume Templates - Professional Resume Designs | Gigm8',
-    'og:description': 'Choose from professionally designed resume templates. Industry-specific designs for every career path.',
+    'og:description': 'Choose from our collection of professional resume templates. ATS-friendly designs that help you stand out to employers.',
     'og:image': 'https://gigm8.com/thumbnail-og.png',
     'og:url': 'https://gigm8.com/resume-templates',
     'og:type': 'website',
     'og:site_name': 'Gigm8',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Resume Templates - Professional Resume Designs | Gigm8',
-    'twitter:description': 'Choose from professionally designed resume templates. Industry-specific designs for every career path.',
+    'twitter:description': 'Choose from our collection of professional resume templates. ATS-friendly designs that help you stand out to employers.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
   },
   '/resume-scanner': {
     title: 'Resume Scanner - ATS Compatibility Check | Gigm8',
-    description: 'Get instant ATS compatibility analysis and keyword optimization for your resume. Ensure your resume passes through applicant tracking systems.',
-    keywords: 'resume scanner, ATS compatibility, resume analysis, keyword optimization, resume checker',
+    description: 'Scan your resume for ATS compatibility issues. Get detailed feedback on formatting, keywords, and optimization opportunities.',
+    keywords: 'resume scanner, ATS check, resume analysis, job application',
     canonical: 'https://gigm8.com/resume-scanner',
     robots: 'index, follow',
     author: 'Gigm8',
     'og:title': 'Resume Scanner - ATS Compatibility Check | Gigm8',
-    'og:description': 'Get instant ATS compatibility analysis and keyword optimization for your resume. Ensure your resume passes through applicant tracking systems.',
+    'og:description': 'Scan your resume for ATS compatibility issues. Get detailed feedback on formatting, keywords, and optimization opportunities.',
     'og:image': 'https://gigm8.com/thumbnail-og.png',
     'og:url': 'https://gigm8.com/resume-scanner',
     'og:type': 'website',
     'og:site_name': 'Gigm8',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Resume Scanner - ATS Compatibility Check | Gigm8',
-    'twitter:description': 'Get instant ATS compatibility analysis and keyword optimization for your resume. Ensure your resume passes through applicant tracking systems.',
+    'twitter:description': 'Scan your resume for ATS compatibility issues. Get detailed feedback on formatting, keywords, and optimization opportunities.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
   },
   '/cover-letter-builder': {
     title: 'Cover Letter Builder - AI-Powered Cover Letters | Gigm8',
-    description: 'Create compelling cover letters tailored to specific job applications. AI-powered content generation and professional templates.',
-    keywords: 'cover letter builder, cover letter generator, job application, cover letter templates, AI cover letter',
+    description: 'Create compelling cover letters with our AI-powered builder. Personalized templates and optimization suggestions for every application.',
+    keywords: 'cover letter builder, AI cover letter, job application, professional writing',
     canonical: 'https://gigm8.com/cover-letter-builder',
     robots: 'index, follow',
     author: 'Gigm8',
     'og:title': 'Cover Letter Builder - AI-Powered Cover Letters | Gigm8',
-    'og:description': 'Create compelling cover letters tailored to specific job applications. AI-powered content generation and professional templates.',
+    'og:description': 'Create compelling cover letters with our AI-powered builder. Personalized templates and optimization suggestions for every application.',
     'og:image': 'https://gigm8.com/thumbnail-og.png',
     'og:url': 'https://gigm8.com/cover-letter-builder',
     'og:type': 'website',
     'og:site_name': 'Gigm8',
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Cover Letter Builder - AI-Powered Cover Letters | Gigm8',
-    'twitter:description': 'Create compelling cover letters tailored to specific job applications. AI-powered content generation and professional templates.',
+    'twitter:description': 'Create compelling cover letters with our AI-powered builder. Personalized templates and optimization suggestions for every application.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
@@ -239,7 +190,7 @@ export const PAGE_SEO: Record<string, SEOData> = {
   '/resume-review': {
     title: 'Resume Review - Expert Resume Analysis | Gigm8',
     description: 'Get professional feedback from resume experts. Detailed analysis, improvement recommendations, and priority action items.',
-    keywords: 'resume review, expert resume analysis, resume feedback, professional resume critique, resume improvement',
+    keywords: 'resume review, professional feedback, resume analysis, career advice',
     canonical: 'https://gigm8.com/resume-review',
     robots: 'index, follow',
     author: 'Gigm8',
@@ -252,6 +203,26 @@ export const PAGE_SEO: Record<string, SEOData> = {
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Resume Review - Expert Resume Analysis | Gigm8',
     'twitter:description': 'Get professional feedback from resume experts. Detailed analysis, improvement recommendations, and priority action items.',
+    'twitter:image': 'https://gigm8.com/thumbnail-og.png',
+    'twitter:site': '@gigm8',
+    'twitter:creator': '@gigm8'
+  },
+  '/blog': {
+    title: 'Career Blog - Job Search Tips & Career Advice | Gigm8',
+    description: 'Expert career advice, job search tips, and industry insights to help you advance your career and land your dream job.',
+    keywords: 'career advice, job search tips, professional development, career blog',
+    canonical: 'https://gigm8.com/blog',
+    robots: 'index, follow',
+    author: 'Gigm8',
+    'og:title': 'Career Blog - Job Search Tips & Career Advice | Gigm8',
+    'og:description': 'Expert career advice, job search tips, and industry insights to help you advance your career and land your dream job.',
+    'og:image': 'https://gigm8.com/thumbnail-og.png',
+    'og:url': 'https://gigm8.com/blog',
+    'og:type': 'website',
+    'og:site_name': 'Gigm8',
+    'twitter:card': 'summary_large_image',
+    'twitter:title': 'Career Blog - Job Search Tips & Career Advice | Gigm8',
+    'twitter:description': 'Expert career advice, job search tips, and industry insights to help you advance your career and land your dream job.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'
@@ -278,12 +249,42 @@ export function generateMetaTags(seoData: SEOData) {
     'twitter:description': seoData['twitter:description'] || seoData.description,
     'twitter:image': seoData['twitter:image'] || `${baseUrl}/thumbnail-og.png`,
     'twitter:site': seoData['twitter:site'] || '@gigm8',
-    'twitter:creator': seoData['twitter:creator'] || '@gigm8',
-    'article:published_time': seoData['article:published_time'],
-    'article:modified_time': seoData['article:modified_time']
+    'twitter:creator': seoData['twitter:creator'] || '@gigm8'
   };
 }
 
-export function generateStructuredData(schema: any) {
-  return schema;
+export function generateStructuredData(page: string, additionalData?: any) {
+  const baseStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Gigm8',
+    url: 'https://gigm8.com',
+    description: 'AI-powered job search and resume optimization platform',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://gigm8.com/jobs?q={search_term_string}',
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
+  switch (page) {
+    case 'home':
+      return {
+        ...baseStructuredData,
+        '@type': 'WebSite',
+        name: 'Gigm8',
+        description: 'Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time.'
+      };
+    case 'jobs':
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'JobPosting',
+        name: 'Job Search Platform',
+        description: 'Discover thousands of job opportunities from top companies',
+        url: 'https://gigm8.com/jobs',
+        ...additionalData
+      };
+    default:
+      return baseStructuredData;
+  }
 }
