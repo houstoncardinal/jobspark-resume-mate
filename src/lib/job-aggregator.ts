@@ -319,7 +319,7 @@ async function fetchIndeedJobs(params: JobSearchParams): Promise<JobListing[]> {
       q: params.query || '',
       l: params.location || '',
       limit: (params.limit || 50).toString(),
-      start: ((params.page || 1) - 1) * (params.limit || 50).toString()
+      start: (((params.page || 1) - 1) * (params.limit || 50)).toString()
     });
 
     const response = await fetch(
@@ -572,7 +572,7 @@ export async function searchJobs(params: JobSearchParams): Promise<JobListing[]>
     }
 
     if (sources.includes('rss')) {
-      promises.push(getAllRSSJobs(params));
+      promises.push(getAllRSSJobs());
     }
 
     const results = await Promise.allSettled(promises);
@@ -739,6 +739,38 @@ export function getCacheStats() {
       age: Date.now() - entry.timestamp
     }))
   };
+}
+
+// Get available job sources
+export function getAvailableSources(): string[] {
+  return [
+    'usajobs',
+    'adzuna', 
+    'indeed',
+    'linkedin',
+    'github',
+    'ziprecruiter',
+    'rss',
+    'remoteok',
+    'mock'
+  ];
+}
+
+// Test API connections (alias for checkAPIStatus)
+export async function testAPIConnections(): Promise<Record<string, boolean>> {
+  const status = await checkAPIStatus();
+  const result: Record<string, boolean> = {};
+  
+  Object.entries(status).forEach(([key, value]) => {
+    result[key] = value.status === 'active';
+  });
+  
+  return result;
+}
+
+// Search all jobs (alias for searchJobs)
+export async function searchAllJobs(params: JobSearchParams): Promise<JobListing[]> {
+  return await searchJobs(params);
 }
 
 // API Status Checker

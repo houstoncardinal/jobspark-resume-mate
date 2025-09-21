@@ -319,7 +319,7 @@ export const ResumeManagement = () => {
                 <SelectItem value="all">All Safety Levels</SelectItem>
                 <SelectItem value="safe">Safe (80+)</SelectItem>
                 <SelectItem value="warning">Warning (60-79)</SelectItem>
-                <SelectItem value="danger">Danger (<60)</SelectItem>
+                <SelectItem value="danger">Danger (&lt;60)</SelectItem>
               </SelectContent>
             </Select>
           </div>
