@@ -125,58 +125,132 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
   const selectedToolData = tools.find(tool => tool.id === selectedTool);
 
   const Sidebar = ({ className }: { className?: string }) => (
-    <div className={cn("flex flex-col h-full bg-white border-r", className)}>
-      {/* Logo/Header */}
-      <div className="p-6 border-b">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-            <Crown className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Resume Builder</h2>
-            <p className="text-sm text-gray-600">Professional Tools</p>
-          </div>
-        </div>
-      </div>
-
+    <div className={cn("flex flex-col h-full bg-white border-r border-gray-200 shadow-sm", className)}>
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-1">
         {/* Dashboard Home */}
         <button
           onClick={handleBackToDashboard}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200",
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group",
             !selectedTool 
-              ? "bg-blue-50 text-blue-600 border border-blue-200 shadow-sm" 
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" 
+              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           )}
         >
-          <Home className={cn("h-5 w-5", !selectedTool ? "text-blue-600" : "text-gray-500")} />
-          <span className="font-medium">Dashboard</span>
+          <div className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+            !selectedTool ? "bg-blue-100" : "bg-gray-100 group-hover:bg-gray-200"
+          )}>
+            <Home className={cn("h-4 w-4", !selectedTool ? "text-blue-600" : "text-gray-600")} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold">Dashboard</span>
+            <p className="text-xs text-gray-500 mt-0.5">Overview & Stats</p>
+          </div>
         </button>
 
-        <Separator className="my-4" />
+        <div className="py-2">
+          <div className="h-px bg-gray-200"></div>
+        </div>
         
         {/* Tools */}
         <div className="space-y-1">
-          <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tools</h3>
           {tools.map((tool) => {
             const IconComponent = tool.icon;
             const isActive = selectedTool === tool.id;
+            
+            // Define tool-specific colors
+            const getToolColors = (toolId: string) => {
+              switch(toolId) {
+                case 'ai-optimizer':
+                  return {
+                    bg: isActive ? 'bg-blue-50' : 'hover:bg-blue-50/50',
+                    text: isActive ? 'text-blue-700' : 'text-gray-700 hover:text-blue-600',
+                    border: isActive ? 'border-blue-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-blue-100' : 'bg-blue-50 group-hover:bg-blue-100',
+                    iconColor: isActive ? 'text-blue-600' : 'text-blue-500'
+                  };
+                case 'builder':
+                  return {
+                    bg: isActive ? 'bg-purple-50' : 'hover:bg-purple-50/50',
+                    text: isActive ? 'text-purple-700' : 'text-gray-700 hover:text-purple-600',
+                    border: isActive ? 'border-purple-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-purple-100' : 'bg-purple-50 group-hover:bg-purple-100',
+                    iconColor: isActive ? 'text-purple-600' : 'text-purple-500'
+                  };
+                case 'upload':
+                  return {
+                    bg: isActive ? 'bg-green-50' : 'hover:bg-green-50/50',
+                    text: isActive ? 'text-green-700' : 'text-gray-700 hover:text-green-600',
+                    border: isActive ? 'border-green-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-green-100' : 'bg-green-50 group-hover:bg-green-100',
+                    iconColor: isActive ? 'text-green-600' : 'text-green-500'
+                  };
+                case 'templates':
+                  return {
+                    bg: isActive ? 'bg-orange-50' : 'hover:bg-orange-50/50',
+                    text: isActive ? 'text-orange-700' : 'text-gray-700 hover:text-orange-600',
+                    border: isActive ? 'border-orange-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-orange-100' : 'bg-orange-50 group-hover:bg-orange-100',
+                    iconColor: isActive ? 'text-orange-600' : 'text-orange-500'
+                  };
+                case 'cover-letter':
+                  return {
+                    bg: isActive ? 'bg-indigo-50' : 'hover:bg-indigo-50/50',
+                    text: isActive ? 'text-indigo-700' : 'text-gray-700 hover:text-indigo-600',
+                    border: isActive ? 'border-indigo-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-indigo-100' : 'bg-indigo-50 group-hover:bg-indigo-100',
+                    iconColor: isActive ? 'text-indigo-600' : 'text-indigo-500'
+                  };
+                case 'ats-scanner':
+                  return {
+                    bg: isActive ? 'bg-pink-50' : 'hover:bg-pink-50/50',
+                    text: isActive ? 'text-pink-700' : 'text-gray-700 hover:text-pink-600',
+                    border: isActive ? 'border-pink-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-pink-100' : 'bg-pink-50 group-hover:bg-pink-100',
+                    iconColor: isActive ? 'text-pink-600' : 'text-pink-500'
+                  };
+                default:
+                  return {
+                    bg: isActive ? 'bg-gray-50' : 'hover:bg-gray-50',
+                    text: isActive ? 'text-gray-700' : 'text-gray-700 hover:text-gray-900',
+                    border: isActive ? 'border-gray-200' : 'border-transparent',
+                    iconBg: isActive ? 'bg-gray-100' : 'bg-gray-50 group-hover:bg-gray-100',
+                    iconColor: isActive ? 'text-gray-600' : 'text-gray-500'
+                  };
+              }
+            };
+            
+            const colors = getToolColors(tool.id);
+            
             return (
               <button
                 key={tool.id}
                 onClick={() => handleToolSelect(tool.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200",
-                  isActive 
-                    ? "bg-blue-50 text-blue-600 border border-blue-200 shadow-sm" 
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group border",
+                  colors.bg,
+                  colors.text,
+                  colors.border
                 )}
               >
-                <IconComponent className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-500")} />
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                  colors.iconBg
+                )}>
+                  <IconComponent className={cn("h-4 w-4", colors.iconColor)} />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium block truncate">{tool.name}</span>
+                  <span className="font-semibold block truncate">{tool.name}</span>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {tool.id === 'ai-optimizer' && 'AI-powered optimization'}
+                    {tool.id === 'builder' && 'Build from scratch'}
+                    {tool.id === 'upload' && 'Upload existing resume'}
+                    {tool.id === 'templates' && 'Professional templates'}
+                    {tool.id === 'cover-letter' && 'Matching cover letters'}
+                    {tool.id === 'ats-scanner' && 'ATS compatibility check'}
+                  </p>
                 </div>
               </button>
             );
@@ -185,16 +259,16 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-          <div className="w-10 h-10 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
-            <User className="h-5 w-5 text-white" />
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">Welcome Back!</p>
-            <p className="text-xs text-gray-600">Premium User</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">Welcome Back!</p>
+            <p className="text-xs text-gray-500">Premium User</p>
           </div>
-          <Settings className="h-4 w-4 text-gray-400" />
+          <Settings className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
         </div>
       </div>
     </div>
@@ -325,37 +399,27 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
     const ToolComponent = selectedToolData.component;
     
     return (
-      <div className="h-full flex flex-col">
-        {/* Tool Header */}
-        <div className="bg-white border-b px-6 py-4">
-          <div className="flex items-center gap-4">
+      <div className="h-full flex flex-col bg-white">
+        {/* Minimal Tool Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3">
+          <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={handleBackToDashboard}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-500 hover:text-gray-700 -ml-2"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center",
-                `bg-gradient-to-br ${selectedToolData.color}`
-              )}>
-                <selectedToolData.icon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{selectedToolData.name}</h2>
-                <p className="text-sm text-gray-600">{selectedToolData.description}</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <selectedToolData.icon className="h-5 w-5 text-gray-600" />
+              <h2 className="text-lg font-semibold text-gray-900">{selectedToolData.name}</h2>
             </div>
           </div>
         </div>
         
-        {/* Tool Content */}
-        <div className="flex-1 overflow-auto bg-gray-50">
+        {/* Tool Content - Full Canvas */}
+        <div className="flex-1 overflow-auto">
           <ToolComponent 
             onResumeUpload={setUploadedResume}
             uploadedResume={uploadedResume}
@@ -379,7 +443,7 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-80">
+              <SheetContent side="left" className="p-0 w-72">
                 <Sidebar />
               </SheetContent>
             </Sheet>
@@ -392,7 +456,7 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
 
       <div className="flex h-screen lg:h-auto">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-80 h-screen sticky top-0">
+        <div className="hidden lg:block w-72 h-screen sticky top-0">
           <Sidebar />
         </div>
 
