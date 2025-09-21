@@ -8,7 +8,7 @@ interface SEOProps {
 }
 
 export const SEO: React.FC<SEOProps> = ({ seoData, url = '' }) => {
-  const metaTags = generateMetaTags(seoData, url);
+  const metaTags = generateMetaTags(seoData);
 
   useEffect(() => {
     // Update document title
@@ -65,35 +65,10 @@ export const SEO: React.FC<SEOProps> = ({ seoData, url = '' }) => {
       <meta name="twitter:site" content={metaTags['twitter:site']} />
       <meta name="twitter:creator" content={metaTags['twitter:creator']} />
       
-      {/* Article Meta Tags */}
-      {metaTags['article:published_time'] && (
-        <meta property="article:published_time" content={metaTags['article:published_time']} />
-      )}
-      {metaTags['article:modified_time'] && (
-        <meta property="article:modified_time" content={metaTags['article:modified_time']} />
-      )}
-      
       {/* Structured Data */}
-      {seoData.schema && (
-        <script type="application/ld+json">
-          {JSON.stringify(generateStructuredData(seoData.schema))}
-        </script>
-      )}
-      
-      {/* Additional SEO Meta Tags */}
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta name="language" content="English" />
-      <meta name="revisit-after" content="7 days" />
-      <meta name="distribution" content="global" />
-      <meta name="rating" content="general" />
-      
-      {/* Favicon */}
-      <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="manifest" href="/site.webmanifest" />
+      <script type="application/ld+json">
+        {JSON.stringify(generateStructuredData('home'))}
+      </script>
     </Helmet>
   );
 };
