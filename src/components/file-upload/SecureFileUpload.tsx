@@ -33,9 +33,11 @@ interface FileUploadResult {
   securityScore: number;
   threats: string[];
   metadata?: {
+    fileSize?: string;
+    fileName?: string;
     wordCount: number;
     characterCount: number;
-    language: string;
+    language?: string;
     pageCount?: number;
     confidence?: number;
   };

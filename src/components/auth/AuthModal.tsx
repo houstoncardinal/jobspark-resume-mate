@@ -76,7 +76,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (isSignUp) {
-        await signUp(formData.email, formData.password, formData.fullName, formData.role);
+        await signUp(formData.email, formData.password, formData.role);
         toast({
           title: "Account Created Successfully!",
           description: "Please check your email to verify your account and get started.",

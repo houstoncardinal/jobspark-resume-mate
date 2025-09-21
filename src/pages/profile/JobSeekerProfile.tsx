@@ -1,68 +1,146 @@
-import { useState, useEffect } from "react";
-import { Footer } from "@/components/Footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
-  Mail, 
-  Phone, 
   MapPin, 
-  Calendar, 
+  Phone, 
+  Mail, 
+  Globe, 
   Briefcase, 
   GraduationCap, 
-  Link as LinkIcon,
-  Edit,
-  Save,
-  X,
+  Award, 
+  Upload, 
+  Edit, 
+  Save, 
+  X, 
   Plus,
-  Trash2,
-  Upload,
-  Camera,
-  Award,
+  ExternalLink,
+  Download,
+  Eye,
+  Star,
   Target,
-  Star
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/supabaseClient";
+  Calendar,
+  DollarSign,
+  Building2,
+  Code,
+  BookOpen,
+  Languages,
+  Trophy,
+  FileText,
+  Linkedin,
+  Github,
+  Instagram,
+  Twitter
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/supabaseClient';
 
-export const JobSeekerProfile = () => {
-  const { user, updateProfile } = useAuth();
+interface JobSeekerProfile {
+  id: string;
+  user_id: string;
+  current_title: string;
+  desired_title: string;
+  experience_level: 'entry' | 'mid' | 'senior' | 'executive';
+  salary_expectation_min: number;
+  salary_expectation_max: number;
+  currency: string;
+  availability: 'immediate' | '2weeks' | '1month' | 'flexible';
+  work_preference: 'remote' | 'hybrid' | 'onsite';
+  willing_to_relocate: boolean;
+  preferred_locations: string[];
+  skills: string[];
+  industries: string[];
+  job_types: string[];
+  resume_url: string;
+  portfolio_url: string;
+  linkedin_url: string;
+  github_url: string;
+  website_url: string;
+  bio: string;
+  achievements: string[];
+  certifications: string[];
+  languages: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+const JobSeekerProfile: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<JobSeekerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    first_name: '',
-    last_name: '',
-    phone: '',
-    location: '',
-    experience_level: 'mid',
-    skills: '',
-    education: '',
-    work_experience: '',
-    linkedin_url: '',
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    current_title: '',
+    desired_title: '',
+    experience_level: 'entry' as const,
+    salary_expectation_min: 0,
+    salary_expectation_max: 0,
+    currency: 'USD',
+    availability: 'immediate' as const,
+    work_preference: 'remote' as const,
+    willing_to_relocate: false,
+    preferred_locations: [] as string[],
+    skills: [] as string[],
+    industries: [] as string[],
+    job_types: [] as string[],
+    resume_url: '',
     portfolio_url: '',
-    availability: 'immediately',
-    salary_expectation: '',
-    preferred_locations: '',
-    job_preferences: ''
+    linkedin_url: '',
+    github_url: '',
+    website_url: '',
+    bio: '',
+    achievements: [] as string[],
+    certifications: [] as string[],
+    languages: [] as string[],
   });
+
+  const [tempSkill, setTempSkill] = useState('');
+  const [tempLocation, setTempLocation] = useState('');
+  const [tempAchievement, setTempAchievement] = useState('');
+  const [tempCertification, setTempCertification] = useState('');
+  const [tempLanguage, setTempLanguage] = useState('');
+
+  const commonSkills = [
+    'JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'Java', 'C++', 'SQL',
+    'AWS', 'Docker', 'Kubernetes', 'Git', 'Agile', 'Scrum', 'Project Management',
+    'Data Analysis', 'Machine Learning', 'UI/UX Design', 'Marketing', 'Sales'
+  ];
+
+  const commonIndustries = [
+    'Technology', 'Healthcare', 'Finance', 'Education', 'Retail', 'Manufacturing',
+    'Consulting', 'Non-profit', 'Government', 'Media', 'Entertainment', 'Real Estate'
+  ];
+
+  const commonJobTypes = [
+    'Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance', 'Temporary'
+  ];
+
+  const commonLanguages = [
+    'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean',
+    'Portuguese', 'Italian', 'Russian', 'Arabic', 'Hindi'
+  ];
 
   useEffect(() => {
     if (user) {
-      loadProfileData();
+      fetchProfile();
     }
   }, [user]);
 
-  const loadProfileData = async () => {
-    setLoading(true);
+  const fetchProfile = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('job_seeker_profiles')
         .select('*')
@@ -74,25 +152,34 @@ export const JobSeekerProfile = () => {
       }
 
       if (data) {
-        setProfileData({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          phone: data.phone || '',
-          location: data.location || '',
-          experience_level: data.experience_level || 'mid',
-          skills: data.skills || '',
-          education: data.education || '',
-          work_experience: data.work_experience || '',
-          linkedin_url: data.linkedin_url || '',
+        setProfile(data);
+        setFormData({
+          current_title: data.current_title || '',
+          desired_title: data.desired_title || '',
+          experience_level: data.experience_level || 'entry',
+          salary_expectation_min: data.salary_expectation_min || 0,
+          salary_expectation_max: data.salary_expectation_max || 0,
+          currency: data.currency || 'USD',
+          availability: data.availability || 'immediate',
+          work_preference: data.work_preference || 'remote',
+          willing_to_relocate: data.willing_to_relocate || false,
+          preferred_locations: data.preferred_locations || [],
+          skills: data.skills || [],
+          industries: data.industries || [],
+          job_types: data.job_types || [],
+          resume_url: data.resume_url || '',
           portfolio_url: data.portfolio_url || '',
-          availability: data.availability || 'immediately',
-          salary_expectation: data.salary_expectation || '',
-          preferred_locations: data.preferred_locations || '',
-          job_preferences: data.job_preferences || ''
+          linkedin_url: data.linkedin_url || '',
+          github_url: data.github_url || '',
+          website_url: data.website_url || '',
+          bio: data.bio || '',
+          achievements: data.achievements || [],
+          certifications: data.certifications || [],
+          languages: data.languages || [],
         });
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Error fetching profile:', error);
       toast({
         title: "Error",
         description: "Failed to load profile data.",
@@ -103,25 +190,25 @@ export const JobSeekerProfile = () => {
     }
   };
 
-  const handleSave = async () => {
-    setLoading(true);
+  const saveProfile = async () => {
     try {
       const { error } = await supabase
         .from('job_seeker_profiles')
         .upsert({
           user_id: user?.id,
-          ...profileData,
+          ...formData,
           updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been saved successfully.",
+        title: "Success",
+        description: "Profile updated successfully!",
       });
 
       setEditing(false);
+      fetchProfile();
     } catch (error) {
       console.error('Error saving profile:', error);
       toast({
@@ -129,9 +216,33 @@ export const JobSeekerProfile = () => {
         description: "Failed to save profile.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const addItem = (field: string, value: string, setter: (value: string) => void) => {
+    if (value.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field as keyof typeof prev] as string[], value.trim()]
+      }));
+      setter('');
+    }
+  };
+
+  const removeItem = (field: string, index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
+    }));
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const getExperienceLevelColor = (level: string) => {
@@ -139,156 +250,129 @@ export const JobSeekerProfile = () => {
       case 'entry': return 'bg-green-100 text-green-800';
       case 'mid': return 'bg-blue-100 text-blue-800';
       case 'senior': return 'bg-purple-100 text-purple-800';
-      case 'executive': return 'bg-yellow-100 text-yellow-800';
+      case 'executive': return 'bg-gold-100 text-gold-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-lg text-gray-600">Loading profile...</p>
-          </div>
-        </main>
-        <Footer />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Profile Header */}
-        <Card className="mb-8">
-          <CardContent className="p-8">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {profileData.first_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0"
-                    onClick={() => {/* Handle photo upload */}}
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user?.avatar_url} alt={user?.full_name} />
+                <AvatarFallback className="text-lg">
+                  {getInitials(user?.full_name || '')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{user?.full_name}</h1>
+                <p className="text-gray-600">{formData.current_title || 'Job Seeker'}</p>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Badge className={getExperienceLevelColor(formData.experience_level)}>
+                    {formData.experience_level.charAt(0).toUpperCase() + formData.experience_level.slice(1)}
+                  </Badge>
+                  <Badge variant="outline">{formData.work_preference}</Badge>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {profileData.first_name && profileData.last_name 
-                      ? `${profileData.first_name} ${profileData.last_name}`
-                      : user?.email || 'Job Seeker'
-                    }
-                  </h1>
-                  <p className="text-gray-600 mb-2">{user?.email}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getExperienceLevelColor(profileData.experience_level)}>
-                      {profileData.experience_level?.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                    {profileData.location && (
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {profileData.location}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {editing ? (
-                  <>
-                    <Button onClick={handleSave} disabled={loading}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button variant="outline" onClick={() => setEditing(false)}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button onClick={() => setEditing(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex space-x-2">
+              {editing ? (
+                <>
+                  <Button onClick={saveProfile} className="bg-blue-600 hover:bg-blue-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditing(false)}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setEditing(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
 
-        {/* Profile Content */}
+        {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
           </TabsList>
 
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="first_name">First Name</Label>
-                      <Input
-                        id="first_name"
-                        value={profileData.first_name}
-                        onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
-                        disabled={!editing}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="last_name">Last Name</Label>
-                      <Input
-                        id="last_name"
-                        value={profileData.last_name}
-                        onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
-                        disabled={!editing}
-                      />
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="current_title">Current Title</Label>
+                    <Input
+                      id="current_title"
+                      value={formData.current_title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, current_title: e.target.value }))}
+                      disabled={!editing}
+                      placeholder="e.g., Software Engineer"
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                        disabled={!editing}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={profileData.location}
-                        onChange={(e) => setProfileData({...profileData, location: e.target.value})}
-                        disabled={!editing}
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="desired_title">Desired Title</Label>
+                    <Input
+                      id="desired_title"
+                      value={formData.desired_title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, desired_title: e.target.value }))}
+                      disabled={!editing}
+                      placeholder="e.g., Senior Software Engineer"
+                    />
                   </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    disabled={!editing}
+                    placeholder="Tell us about yourself..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="experience_level">Experience Level</Label>
                     <select
                       id="experience_level"
-                      value={profileData.experience_level}
-                      onChange={(e) => setProfileData({...profileData, experience_level: e.target.value})}
+                      value={formData.experience_level}
+                      onChange={(e) => setFormData(prev => ({ ...prev, experience_level: e.target.value as any }))}
                       disabled={!editing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="entry">Entry Level</option>
                       <option value="mid">Mid Level</option>
@@ -296,164 +380,409 @@ export const JobSeekerProfile = () => {
                       <option value="executive">Executive</option>
                     </select>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LinkIcon className="h-5 w-5" />
-                    Links & Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="linkedin_url">LinkedIn URL</Label>
-                    <Input
-                      id="linkedin_url"
-                      value={profileData.linkedin_url}
-                      onChange={(e) => setProfileData({...profileData, linkedin_url: e.target.value})}
+                    <Label htmlFor="availability">Availability</Label>
+                    <select
+                      id="availability"
+                      value={formData.availability}
+                      onChange={(e) => setFormData(prev => ({ ...prev, availability: e.target.value as any }))}
                       disabled={!editing}
-                      placeholder="https://linkedin.com/in/yourname"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="immediate">Immediate</option>
+                      <option value="2weeks">2 Weeks</option>
+                      <option value="1month">1 Month</option>
+                      <option value="flexible">Flexible</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="work_preference">Work Preference</Label>
+                    <select
+                      id="work_preference"
+                      value={formData.work_preference}
+                      onChange={(e) => setFormData(prev => ({ ...prev, work_preference: e.target.value as any }))}
+                      disabled={!editing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="remote">Remote</option>
+                      <option value="hybrid">Hybrid</option>
+                      <option value="onsite">On-site</option>
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Salary Expectations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Salary Expectations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="salary_min">Minimum Salary</Label>
+                    <Input
+                      id="salary_min"
+                      type="number"
+                      value={formData.salary_expectation_min}
+                      onChange={(e) => setFormData(prev => ({ ...prev, salary_expectation_min: parseInt(e.target.value) || 0 }))}
+                      disabled={!editing}
+                      placeholder="50000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="salary_max">Maximum Salary</Label>
+                    <Input
+                      id="salary_max"
+                      type="number"
+                      value={formData.salary_expectation_max}
+                      onChange={(e) => setFormData(prev => ({ ...prev, salary_expectation_max: parseInt(e.target.value) || 0 }))}
+                      disabled={!editing}
+                      placeholder="80000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="currency">Currency</Label>
+                    <select
+                      id="currency"
+                      value={formData.currency}
+                      onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                      disabled={!editing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                      <option value="CAD">CAD</option>
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Skills Tab */}
+          <TabsContent value="skills" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Code className="h-5 w-5 mr-2" />
+                  Skills
+                </CardTitle>
+                <CardDescription>
+                  Add your technical and soft skills
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={tempSkill}
+                      onChange={(e) => setTempSkill(e.target.value)}
+                      placeholder="Add a skill"
+                      disabled={!editing}
+                      onKeyPress={(e) => e.key === 'Enter' && addItem('skills', tempSkill, setTempSkill)}
+                    />
+                    <Button 
+                      onClick={() => addItem('skills', tempSkill, setTempSkill)}
+                      disabled={!editing}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {formData.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {skill}
+                        {editing && (
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeItem('skills', index)}
+                          />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {commonSkills.filter(skill => !formData.skills.includes(skill)).map(skill => (
+                      <Button
+                        key={skill}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addItem('skills', skill, setTempSkill)}
+                        disabled={!editing}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {skill}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Industries */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="h-5 w-5 mr-2" />
+                  Industries
+                </CardTitle>
+                <CardDescription>
+                  Select industries you're interested in
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={tempLocation}
+                      onChange={(e) => setTempLocation(e.target.value)}
+                      placeholder="Add an industry"
+                      disabled={!editing}
+                      onKeyPress={(e) => e.key === 'Enter' && addItem('industries', tempLocation, setTempLocation)}
+                    />
+                    <Button 
+                      onClick={() => addItem('industries', tempLocation, setTempLocation)}
+                      disabled={!editing}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {formData.industries.map((industry, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {industry}
+                        {editing && (
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeItem('industries', index)}
+                          />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {commonIndustries.filter(industry => !formData.industries.includes(industry)).map(industry => (
+                      <Button
+                        key={industry}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addItem('industries', industry, setTempLocation)}
+                        disabled={!editing}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {industry}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Portfolio Tab */}
+          <TabsContent value="portfolio" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Portfolio & Links
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="resume_url">Resume URL</Label>
+                    <Input
+                      id="resume_url"
+                      value={formData.resume_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, resume_url: e.target.value }))}
+                      disabled={!editing}
+                      placeholder="https://example.com/resume.pdf"
                     />
                   </div>
                   <div>
                     <Label htmlFor="portfolio_url">Portfolio URL</Label>
                     <Input
                       id="portfolio_url"
-                      value={profileData.portfolio_url}
-                      onChange={(e) => setProfileData({...profileData, portfolio_url: e.target.value})}
+                      value={formData.portfolio_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, portfolio_url: e.target.value }))}
                       disabled={!editing}
                       placeholder="https://yourportfolio.com"
                     />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="experience" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  Work Experience
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={profileData.work_experience}
-                  onChange={(e) => setProfileData({...profileData, work_experience: e.target.value})}
-                  disabled={!editing}
-                  placeholder="Describe your work experience..."
-                  rows={6}
-                />
+                  <div>
+                    <Label htmlFor="linkedin_url">LinkedIn</Label>
+                    <Input
+                      id="linkedin_url"
+                      value={formData.linkedin_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
+                      disabled={!editing}
+                      placeholder="https://linkedin.com/in/yourname"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="github_url">GitHub</Label>
+                    <Input
+                      id="github_url"
+                      value={formData.github_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, github_url: e.target.value }))}
+                      disabled={!editing}
+                      placeholder="https://github.com/yourname"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
+            {/* Achievements */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5" />
-                  Education
+                <CardTitle className="flex items-center">
+                  <Trophy className="h-5 w-5 mr-2" />
+                  Achievements
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Textarea
-                  value={profileData.education}
-                  onChange={(e) => setProfileData({...profileData, education: e.target.value})}
-                  disabled={!editing}
-                  placeholder="Describe your education background..."
-                  rows={4}
-                />
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={tempAchievement}
+                      onChange={(e) => setTempAchievement(e.target.value)}
+                      placeholder="Add an achievement"
+                      disabled={!editing}
+                      onKeyPress={(e) => e.key === 'Enter' && addItem('achievements', tempAchievement, setTempAchievement)}
+                    />
+                    <Button 
+                      onClick={() => addItem('achievements', tempAchievement, setTempAchievement)}
+                      disabled={!editing}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {formData.achievements.map((achievement, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span>{achievement}</span>
+                        {editing && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeItem('achievements', index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="skills" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Skills & Expertise
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={profileData.skills}
-                  onChange={(e) => setProfileData({...profileData, skills: e.target.value})}
-                  disabled={!editing}
-                  placeholder="List your skills (comma separated)..."
-                  rows={4}
-                />
-                <p className="text-sm text-gray-500 mt-2">
-                  Example: JavaScript, React, Node.js, Python, Machine Learning
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
+          {/* Preferences Tab */}
           <TabsContent value="preferences" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
+                <CardTitle className="flex items-center">
+                  <Target className="h-5 w-5 mr-2" />
                   Job Preferences
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="availability">Availability</Label>
-                  <select
-                    id="availability"
-                    value={profileData.availability}
-                    onChange={(e) => setProfileData({...profileData, availability: e.target.value})}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="immediately">Immediately</option>
-                    <option value="2weeks">2 weeks notice</option>
-                    <option value="1month">1 month notice</option>
-                    <option value="flexible">Flexible</option>
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="job_types">Job Types</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {commonJobTypes.map(jobType => (
+                        <Button
+                          key={jobType}
+                          variant={formData.job_types.includes(jobType) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            if (editing) {
+                              setFormData(prev => ({
+                                ...prev,
+                                job_types: prev.job_types.includes(jobType)
+                                  ? prev.job_types.filter(t => t !== jobType)
+                                  : [...prev.job_types, jobType]
+                              }));
+                            }
+                          }}
+                          disabled={!editing}
+                        >
+                          {jobType}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="willing_to_relocate"
+                      checked={formData.willing_to_relocate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, willing_to_relocate: e.target.checked }))}
+                      disabled={!editing}
+                      className="rounded"
+                    />
+                    <Label htmlFor="willing_to_relocate">Willing to relocate</Label>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="salary_expectation">Salary Expectation</Label>
-                  <Input
-                    id="salary_expectation"
-                    value={profileData.salary_expectation}
-                    onChange={(e) => setProfileData({...profileData, salary_expectation: e.target.value})}
-                    disabled={!editing}
-                    placeholder="e.g., $80,000 - $100,000"
-                  />
-                </div>
+
                 <div>
                   <Label htmlFor="preferred_locations">Preferred Locations</Label>
-                  <Input
-                    id="preferred_locations"
-                    value={profileData.preferred_locations}
-                    onChange={(e) => setProfileData({...profileData, preferred_locations: e.target.value})}
-                    disabled={!editing}
-                    placeholder="e.g., Remote, San Francisco, New York"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="job_preferences">Job Preferences</Label>
-                  <Textarea
-                    id="job_preferences"
-                    value={profileData.job_preferences}
-                    onChange={(e) => setProfileData({...profileData, job_preferences: e.target.value})}
-                    disabled={!editing}
-                    placeholder="Describe your ideal job and work environment..."
-                    rows={4}
-                  />
+                  <div className="space-y-2 mt-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={tempLocation}
+                        onChange={(e) => setTempLocation(e.target.value)}
+                        placeholder="Add a location"
+                        disabled={!editing}
+                        onKeyPress={(e) => e.key === 'Enter' && addItem('preferred_locations', tempLocation, setTempLocation)}
+                      />
+                      <Button 
+                        onClick={() => addItem('preferred_locations', tempLocation, setTempLocation)}
+                        disabled={!editing}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {formData.preferred_locations.map((location, index) => (
+                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {location}
+                          {editing && (
+                            <X 
+                              className="h-3 w-3 cursor-pointer" 
+                              onClick={() => removeItem('preferred_locations', index)}
+                            />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 };
+
+export default JobSeekerProfile;

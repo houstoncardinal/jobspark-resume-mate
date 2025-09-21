@@ -10,24 +10,20 @@ export interface SavedJob {
   job_id: string;
   job_title: string;
   company: string;
-  location: string;
-  salary_min?: number;
-  salary_max?: number;
   job_url?: string;
-  source: string;
-  remote: boolean;
-  description?: string;
-  saved_at: string;
-  applied_at?: string;
-  status: 'saved' | 'applied' | 'interview' | 'rejected' | 'offered';
+  resume_name?: string;
+  applied_at: string;
+  status: 'applied' | 'interview' | 'rejected' | 'offered' | 'withdrawn';
+  notes?: string;
+  salary_offered?: number;
+  interview_date?: string;
 }
 
 export interface JobSearchHistory {
   id: string;
   user_id: string;
   query: string;
-  location: string;
-  sources: string[];
+  location?: string;
   results_count: number;
   searched_at: string;
 }
@@ -43,7 +39,7 @@ export async function saveJob(userId: string, job: JobListing): Promise<boolean>
         job_title: job.title,
         company: job.company,
         job_url: job.url,
-        status: 'saved'
+        status: 'applied'
       });
 
     if (error) {
@@ -107,24 +103,16 @@ export async function applyToJob(userId: string, job: JobListing, resumeName?: s
 }
 
 // Update job application status
-export async function updateJobStatus(
-  applicationId: string, 
-  status: 'applied' | 'interview' | 'rejected' | 'offered' | 'withdrawn',
-  notes?: string,
-  salaryOffered?: number,
-  interviewDate?: string
-): Promise<boolean> {
+export async function updateJobStatus(jobId: string, status: SavedJob['status'], notes?: string): Promise<boolean> {
   try {
-    const updateData: any = { status };
-    
-    if (notes) updateData.notes = notes;
-    if (salaryOffered) updateData.salary_offered = salaryOffered;
-    if (interviewDate) updateData.interview_date = interviewDate;
-
     const { error } = await supabase
       .from('job_applications')
-      .update(updateData)
-      .eq('id', applicationId);
+      .update({ 
+        status,
+        notes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
 
     if (error) {
       console.error('Error updating job status:', error);
@@ -138,15 +126,33 @@ export async function updateJobStatus(
   }
 }
 
-// Log job search analytics
-export async function logJobSearch(
-  userId: string | null,
+// Delete a job application
+export async function deleteJobApplication(jobId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('job_applications')
+      .delete()
+      .eq('id', jobId);
+
+    if (error) {
+      console.error('Error deleting job application:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting job application:', error);
+    return false;
+  }
+}
+
+// Save search analytics
+export async function saveSearchAnalytics(
+  userId: string,
   query: string,
-  location: string,
-  sources: string[],
-  resultsCount: number,
-  ipAddress?: string,
-  userAgent?: string
+  location?: string,
+  sources?: string[],
+  resultsCount: number = 0
 ): Promise<boolean> {
   try {
     const { error } = await supabase
@@ -156,83 +162,50 @@ export async function logJobSearch(
         query,
         location,
         sources,
-        results_count: resultsCount,
-        ip_address: ipAddress,
-        user_agent: userAgent
+        results_count: resultsCount
       });
 
     if (error) {
-      console.error('Error logging search analytics:', error);
+      console.error('Error saving search analytics:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error logging search analytics:', error);
+    console.error('Error saving search analytics:', error);
     return false;
   }
 }
 
-// Get job search history for a user
-export async function getJobSearchHistory(userId: string): Promise<JobSearchHistory[]> {
+// Get search analytics for a user
+export async function getSearchAnalytics(userId: string): Promise<JobSearchHistory[]> {
   try {
     const { data, error } = await supabase
       .from('search_analytics')
       .select('*')
       .eq('user_id', userId)
       .order('searched_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (error) {
-      console.error('Error fetching search history:', error);
+      console.error('Error fetching search analytics:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching search history:', error);
+    console.error('Error fetching search analytics:', error);
     return [];
   }
 }
 
-// Get popular job searches (for analytics)
-export async function getPopularSearches(limit: number = 10): Promise<Array<{query: string, count: number}>> {
-  try {
-    const { data, error } = await supabase
-      .from('search_analytics')
-      .select('query')
-      .not('query', 'is', null)
-      .not('query', 'eq', '');
-
-    if (error) {
-      console.error('Error fetching popular searches:', error);
-      return [];
-    }
-
-    // Count query frequency
-    const queryCounts: Record<string, number> = {};
-    data?.forEach(item => {
-      queryCounts[item.query] = (queryCounts[item.query] || 0) + 1;
-    });
-
-    // Sort by count and return top results
-    return Object.entries(queryCounts)
-      .map(([query, count]) => ({ query, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, limit);
-  } catch (error) {
-    console.error('Error fetching popular searches:', error);
-    return [];
-  }
-}
-
-// Get job application statistics for a user
+// Get job application statistics
 export async function getJobApplicationStats(userId: string): Promise<{
   total: number;
   applied: number;
-  interviews: number;
-  offers: number;
-  rejections: number;
+  interview: number;
+  rejected: number;
+  offered: number;
 }> {
   try {
     const { data, error } = await supabase
@@ -241,38 +214,21 @@ export async function getJobApplicationStats(userId: string): Promise<{
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error fetching application stats:', error);
-      return { total: 0, applied: 0, interviews: 0, offers: 0, rejections: 0 };
+      console.error('Error fetching job application stats:', error);
+      return { total: 0, applied: 0, interview: 0, rejected: 0, offered: 0 };
     }
 
     const stats = {
-      total: data?.length || 0,
-      applied: 0,
-      interviews: 0,
-      offers: 0,
-      rejections: 0
+      total: data.length,
+      applied: data.filter(job => job.status === 'applied').length,
+      interview: data.filter(job => job.status === 'interview').length,
+      rejected: data.filter(job => job.status === 'rejected').length,
+      offered: data.filter(job => job.status === 'offered').length
     };
-
-    data?.forEach(item => {
-      switch (item.status) {
-        case 'applied':
-          stats.applied++;
-          break;
-        case 'interview':
-          stats.interviews++;
-          break;
-        case 'offered':
-          stats.offers++;
-          break;
-        case 'rejected':
-          stats.rejections++;
-          break;
-      }
-    });
 
     return stats;
   } catch (error) {
-    console.error('Error fetching application stats:', error);
-    return { total: 0, applied: 0, interviews: 0, offers: 0, rejections: 0 };
+    console.error('Error fetching job application stats:', error);
+    return { total: 0, applied: 0, interview: 0, rejected: 0, offered: 0 };
   }
 }

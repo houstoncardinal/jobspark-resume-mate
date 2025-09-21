@@ -160,7 +160,7 @@ export const BlogManagement = () => {
         .replace(/[^a-z0-9 -]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
+        .trim();
 
       const readingTime = Math.ceil(formData.content.split(' ').length / 200);
 
@@ -414,6 +414,7 @@ export const BlogManagement = () => {
                 commonCategories={commonCategories}
                 onSubmit={handleCreatePost}
                 onCancel={() => setIsCreateModalOpen(false)}
+                editingPost={null}
               />
             </DialogContent>
           </Dialog>
@@ -719,6 +720,7 @@ export const BlogManagement = () => {
               commonCategories={commonCategories}
               onSubmit={handleUpdatePost}
               onCancel={() => setEditingPost(null)}
+              editingPost={editingPost}
             />
           )}
         </DialogContent>
@@ -742,6 +744,7 @@ const BlogPostForm = ({
   commonTags,
   commonCategories,
   onSubmit,
+  editingPost,
   onCancel
 }: any) => {
   return (

@@ -19,10 +19,12 @@ import SignIn from "@/pages/SignIn";
 import EmailVerificationSuccess from "@/pages/EmailVerificationSuccess";
 import AdminPage from "@/pages/admin/AdminPage";
 import NetworkingHubPage from "@/pages/NetworkingHub";
-import { JobSeekerProfile } from "@/pages/profile/JobSeekerProfile";
-import { RecruiterProfile } from "@/pages/profile/RecruiterProfile";
-import { EmployerProfile } from "@/pages/profile/EmployerProfile";
-import { StudentProfile } from "@/pages/profile/StudentProfile";
+import JobSeekerProfile from "@/pages/profile/JobSeekerProfile";
+import RecruiterProfile from "@/pages/profile/RecruiterProfile";
+import EmployerProfile from "@/pages/profile/EmployerProfile";
+import StudentProfile from "@/pages/profile/StudentProfile";
+import PostJob from "@/pages/PostJob";
+import AppliedJobs from "@/pages/AppliedJobs";
 import NotFound from "@/pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -57,10 +59,18 @@ function App() {
                   <Route path="/email-verification-success" element={<EmailVerificationSuccess />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/networking-hub" element={<NetworkingHubPage />} />
+                  
+                  {/* Profile Routes */}
                   <Route path="/profile/job-seeker" element={<JobSeekerProfile />} />
                   <Route path="/profile/recruiter" element={<RecruiterProfile />} />
                   <Route path="/profile/employer" element={<EmployerProfile />} />
                   <Route path="/profile/student" element={<StudentProfile />} />
+                  
+                  {/* Job Management Routes */}
+                  <Route path="/employer/post-job" element={<PostJob />} />
+                  <Route path="/recruiter/post-job" element={<PostJob />} />
+                  <Route path="/applied-jobs" element={<AppliedJobs />} />
+                  
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
