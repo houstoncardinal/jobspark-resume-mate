@@ -1,405 +1,914 @@
-import { useState } from "react";
-import { Search, MapPin, Building2, Clock, DollarSign, ExternalLink, Globe2, Filter, Crosshair } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { searchJobs, type NormalizedJob, type RegionFilter, getMissingSourceKeys } from "@/lib/jobs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { JobDetails } from "@/components/JobDetails";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+/** @jsxImportSource react */
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { JobDetailModal } from '@/components/JobDetailModal';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Search, 
+  MapPin, 
+  Briefcase, 
+  Clock, 
+  DollarSign, 
+  Building2, 
+  Star,
+  Filter,
+  SortAsc,
+  Grid,
+  List,
+  Heart,
+  Share2,
+  ExternalLink,
+  Globe,
+  Users,
+  TrendingUp,
+  Award,
+  Calendar,
+  Bookmark,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  X,
+  RefreshCw,
+  Zap,
+  Target,
+  Shield,
+  Sparkles,
+  Crown,
+  Flame,
+  ArrowRight,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Lightbulb,
+  Sliders,
+  RotateCcw,
+  Diamond,
+  Tag,
+  Bell,
+  Plus,
+  Minus
+} from 'lucide-react';
 
-const ALL_SOURCES = ["remotive", "arbeitnow", "remoteok", "ziprecruiter", "jooble", "usajobs", "adzuna"] as const;
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  type: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
+  experienceLevel: 'entry' | 'mid' | 'senior' | 'executive';
+  salary: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  description: string;
+  requirements: string[];
+  benefits: string[];
+  postedAt: string;
+  expiresAt: string;
+  applications: number;
+  views: number;
+  rating: number;
+  featured: boolean;
+  urgent: boolean;
+  remote: boolean;
+  visaSponsorship: boolean;
+  equity: boolean;
+  tags: string[];
+  industry: string;
+  url?: string;
+  source?: string;
+}
+
+const mockJobs: Job[] = [
+  {
+    id: '1',
+    title: 'Senior Frontend Developer',
+    company: 'TechCorp Inc.',
+    location: 'San Francisco, CA',
+    type: 'full-time',
+    experienceLevel: 'senior',
+    salary: { min: 120000, max: 180000, currency: 'USD' },
+    description: 'We are looking for a Senior Frontend Developer to join our growing team. You will be responsible for building and maintaining our web applications using React, TypeScript, and modern frontend technologies.',
+    requirements: ['5+ years React experience', 'TypeScript proficiency', 'CSS/SCSS expertise', 'REST API integration', 'Git version control'],
+    benefits: ['Health insurance', '401k matching', 'Flexible PTO', 'Remote work options', 'Professional development budget'],
+    postedAt: '2024-12-01',
+    expiresAt: '2024-12-31',
+    applications: 45,
+    views: 234,
+    rating: 4.8,
+    featured: true,
+    urgent: false,
+    remote: true,
+    visaSponsorship: true,
+    equity: true,
+    tags: ['React', 'TypeScript', 'Frontend', 'JavaScript', 'CSS'],
+    industry: 'Technology',
+    url: 'https://techcorp.com/careers/senior-frontend-dev',
+    source: 'Company Website'
+  },
+  {
+    id: '2',
+    title: 'Product Manager',
+    company: 'InnovateLabs',
+    location: 'New York, NY',
+    type: 'full-time',
+    experienceLevel: 'mid',
+    salary: { min: 95000, max: 140000, currency: 'USD' },
+    description: 'Join our product team as a Product Manager and help shape the future of our platform. You will work with cross-functional teams to define product strategy, prioritize features, and drive product development.',
+    requirements: ['3+ years product management', 'Agile/Scrum experience', 'Data analysis skills', 'Stakeholder management', 'Technical background preferred'],
+    benefits: ['Competitive salary', 'Stock options', 'Health benefits', 'Learning budget', 'Team events'],
+    postedAt: '2024-12-02',
+    expiresAt: '2024-12-30',
+    applications: 32,
+    views: 156,
+    rating: 4.6,
+    featured: false,
+    urgent: true,
+    remote: false,
+    visaSponsorship: false,
+    equity: true,
+    tags: ['Product Management', 'Agile', 'Strategy', 'Analytics', 'Leadership'],
+    industry: 'Technology',
+    url: 'https://innovatelabs.com/careers/product-manager',
+    source: 'Company Website'
+  },
+  {
+    id: '3',
+    title: 'UX Designer',
+    company: 'DesignStudio',
+    location: 'Toronto, Canada',
+    type: 'full-time',
+    experienceLevel: 'mid',
+    salary: { min: 70000, max: 95000, currency: 'CAD' },
+    description: 'Create beautiful and intuitive user experiences. You will work on user research, wireframing, prototyping, and collaborating with development teams.',
+    requirements: ['3+ years UX design experience', 'Figma proficiency', 'User research skills', 'Prototyping experience', 'Portfolio required'],
+    benefits: ['Health insurance', 'RRSP matching', 'Design budget', 'Flexible hours', 'Remote work options'],
+    postedAt: '2024-12-02',
+    expiresAt: '2024-12-31',
+    applications: 18,
+    views: 98,
+    rating: 4.4,
+    featured: false,
+    urgent: false,
+    remote: true,
+    visaSponsorship: false,
+    equity: false,
+    tags: ['UX Design', 'Figma', 'User Research', 'Prototyping', 'UI Design'],
+    industry: 'Design',
+    url: 'https://designstudio.com/careers/ux-designer',
+    source: 'Company Website'
+  }
+];
+
+const industries = [
+  'Technology', 'Healthcare', 'Finance', 'Education', 'Marketing', 
+  'Data Science', 'Design', 'Sales', 'Operations', 'Consulting'
+];
+
+const popularTags = [
+  'React', 'Python', 'JavaScript', 'Machine Learning', 'Marketing',
+  'Sales', 'Design', 'Data Analysis', 'Project Management', 'Leadership'
+];
 
 interface JobSearchProps {
   onJobSelect: (job: any) => void;
   selectedJob?: any;
 }
 
-const REGION_META: Record<RegionFilter, { label: string; flag: string }> = {
-  "any": { label: "Any region", flag: "🌍" },
-  "north-america": { label: "North America", flag: "🇺🇸" },
-  "south-america": { label: "South America", flag: "🇧🇷" },
-  "europe": { label: "Europe", flag: "🇪🇺" },
-  "asia": { label: "Asia", flag: "🇯🇵" },
-  "africa": { label: "Africa", flag: "🇿🇦" },
-  "oceania": { label: "Oceania", flag: "🇦🇺" },
-  "middle-east": { label: "Middle East", flag: "🇦🇪" },
-};
-
-const mapCountryToRegion = (country: string): RegionFilter => {
-  const c = country.toLowerCase();
-  if (/usa|united states|canada|mexico/.test(c)) return "north-america";
-  if (/brazil|argentina|chile|peru|colombia|uruguay/.test(c)) return "south-america";
-  if (/uk|united kingdom|england|germany|france|spain|italy|netherlands|poland|portugal|sweden|norway|denmark|ireland|switzerland|austria|belgium|romania|czech|greece|finland|hungary|bulgaria|croatia|serbia/.test(c)) return "europe";
-  if (/india|china|japan|singapore|hong kong|korea|vietnam|philippines|indonesia|malaysia|thailand|pakistan|bangladesh|sri lanka|taiwan/.test(c)) return "asia";
-  if (/nigeria|south africa|egypt|kenya|morocco|ghana|ethiopia|tunisia|algeria/.test(c)) return "africa";
-  if (/australia|new zealand/.test(c)) return "oceania";
-  if (/uae|dubai|saudi|israel|turkey|qatar|jordan|lebanon|kuwait|oman|bahrain/.test(c)) return "middle-east";
-  return "any";
-};
-
-export const JobSearch = ({ onJobSelect, selectedJob }: JobSearchProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [region, setRegion] = useState<RegionFilter>("any");
-  const [remoteOnly, setRemoteOnly] = useState(false);
-  const [jobs, setJobs] = useState<NormalizedJob[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [detailsJob, setDetailsJob] = useState<NormalizedJob | null>(null);
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 50;
+const JobSearch = ({ onJobSelect, selectedJob: propSelectedJob }: JobSearchProps) => {
   const { toast } = useToast();
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>(mockJobs);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+  
+  const [filters, setFilters] = useState({
+    location: '',
+    jobType: 'all',
+    experienceLevel: 'all',
+    industry: 'all',
+    salaryRange: [0, 200000],
+    remote: false,
+    featured: false,
+    urgent: false,
+    visaSponsorship: false,
+    equity: false,
+    selectedTags: [] as string[]
+  });
 
-  const [useGeo, setUseGeo] = useState(false);
-  const [geoLabel, setGeoLabel] = useState<string>("");
-  const [geoLocationParam, setGeoLocationParam] = useState<string>("");
+  useEffect(() => {
+    filterJobs();
+  }, [searchQuery, filters, sortBy, jobs]);
 
-  const [selectedSources, setSelectedSources] = useState<string[]>([...ALL_SOURCES]);
-  const [perSourceLimit, setPerSourceLimit] = useState<number>(30);
+  const filterJobs = () => {
+    let filtered = [...jobs];
 
-  const [progress, setProgress] = useState<{ completed: number; total: number; last?: { source: string; count: number } } | null>(null);
-  const [includeWorldwideRemote, setIncludeWorldwideRemote] = useState(true);
-  const [sortByRelevance, setSortByRelevance] = useState(true);
-  const missingKeys = getMissingSourceKeys();
-
-  const detectGeolocation = async () => {
-    if (!navigator.geolocation) {
-      toast({ title: "Geolocation not supported", description: "Your browser does not support location detection.", variant: "destructive" });
-      setUseGeo(false);
-      return;
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
     }
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      try {
-        const { latitude, longitude } = pos.coords;
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
-        const res = await fetch(url, { headers: { 'accept': 'application/json' } });
-        const data = await res.json();
-        const city = data.address?.city || data.address?.town || data.address?.village || data.address?.state || "";
-        const country = data.address?.country || "";
-        const label = [city, country].filter(Boolean).join(", ");
-        setGeoLabel(label);
-        setGeoLocationParam(city || country || "");
-        const mapped = mapCountryToRegion(country);
-        if (mapped !== "any") setRegion(mapped);
-        toast({ title: "Location detected", description: label || "Using your region" });
-      } catch (e) {
-        toast({ title: "Failed to detect location", description: "Proceeding without location.", variant: "destructive" });
-        setUseGeo(false);
-      }
-    }, () => {
-      toast({ title: "Permission denied", description: "Enable location to use nearby jobs.", variant: "destructive" });
-      setUseGeo(false);
-    }, { enableHighAccuracy: false, timeout: 8000 });
-  };
 
-  const handleSearch = async () => {
-    setIsLoading(true);
-    setError(null);
-    setProgress({ completed: 0, total: selectedSources.length });
-    if (selectedSources.length === 0) {
-      setIsLoading(false);
-      setProgress(null);
-      toast({ title: "No sources selected", description: "Please select at least one job source to search.", variant: "destructive" });
-      return;
+    // Location filter
+    if (filters.location) {
+      filtered = filtered.filter(job => 
+        job.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
     }
-    try {
-      const locationParam = useGeo ? geoLocationParam : "";
-      const results = await searchJobs(searchQuery, locationParam, {
-        region,
-        remoteOnly,
-        sources: selectedSources as any,
-        perSourceLimit,
-        onProgress: ({ completed, total, source, count }) => setProgress({ completed, total, last: { source, count } }),
-        includeWorldwideRemote,
-        sortByRelevance,
-      });
-      setJobs(results);
-      setPage(1);
-      toast({
-        title: "Search Complete",
-        description: `Found ${results.length} jobs across ${selectedSources.length} sources`,
-      });
-      if (results.length === 0) {
-        toast({
-          title: "No results",
-          description: "Try disabling Remote only, setting Region to Any, removing location, or enabling more sources.",
+
+    // Job type filter
+    if (filters.jobType !== 'all') {
+      filtered = filtered.filter(job => job.type === filters.jobType);
+    }
+
+    // Experience level filter
+    if (filters.experienceLevel !== 'all') {
+      filtered = filtered.filter(job => job.experienceLevel === filters.experienceLevel);
+    }
+
+    // Industry filter
+    if (filters.industry !== 'all') {
+      filtered = filtered.filter(job => job.industry === filters.industry);
+    }
+
+    // Salary range filter
+    filtered = filtered.filter(job => 
+      job.salary.min >= filters.salaryRange[0] && job.salary.max <= filters.salaryRange[1]
+    );
+
+    // Remote filter
+    if (filters.remote) {
+      filtered = filtered.filter(job => job.remote);
+    }
+
+    // Featured filter
+    if (filters.featured) {
+      filtered = filtered.filter(job => job.featured);
+    }
+
+    // Urgent filter
+    if (filters.urgent) {
+      filtered = filtered.filter(job => job.urgent);
+    }
+
+    // Visa sponsorship filter
+    if (filters.visaSponsorship) {
+      filtered = filtered.filter(job => job.visaSponsorship);
+    }
+
+    // Equity filter
+    if (filters.equity) {
+      filtered = filtered.filter(job => job.equity);
+    }
+
+    // Tags filter
+    if (filters.selectedTags.length > 0) {
+      filtered = filtered.filter(job => 
+        filters.selectedTags.some(tag => job.tags.includes(tag))
+      );
+    }
+
+    // Sort jobs
+    switch (sortBy) {
+      case 'date':
+        filtered.sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+        break;
+      case 'salary':
+        filtered.sort((a, b) => b.salary.max - a.salary.max);
+        break;
+      case 'relevance':
+      default:
+        // Enhanced relevance algorithm
+        filtered.sort((a, b) => {
+          let scoreA = 0;
+          let scoreB = 0;
+          
+          // Featured jobs get higher score
+          if (a.featured) scoreA += 10;
+          if (b.featured) scoreB += 10;
+          
+          // Urgent jobs get higher score
+          if (a.urgent) scoreA += 5;
+          if (b.urgent) scoreB += 5;
+          
+          // Higher salary gets higher score
+          scoreA += a.salary.max / 10000;
+          scoreB += b.salary.max / 10000;
+          
+          // More applications indicates popularity
+          scoreA += a.applications / 10;
+          scoreB += b.applications / 10;
+          
+          // Higher rating gets higher score
+          scoreA += a.rating * 2;
+          scoreB += b.rating * 2;
+          
+          return scoreB - scoreA;
         });
-      }
-    } catch (e: any) {
-      setError(e?.message || "Failed to fetch jobs");
-      toast({
-        title: "Search Failed",
-        description: "There was an error fetching job listings.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      setProgress(null);
+        break;
+    }
+
+    setFilteredJobs(filtered);
+  };
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleTagToggle = (tag: string) => {
+    setFilters(prev => ({
+      ...prev,
+      selectedTags: prev.selectedTags.includes(tag)
+        ? prev.selectedTags.filter(t => t !== tag)
+        : [...prev.selectedTags, tag]
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      location: '',
+      jobType: 'all',
+      experienceLevel: 'all',
+      industry: 'all',
+      salaryRange: [0, 200000],
+      remote: false,
+      featured: false,
+      urgent: false,
+      visaSponsorship: false,
+      equity: false,
+      selectedTags: []
+    });
+    setSearchQuery('');
+  };
+
+  const handleJobClick = (job: Job) => {
+    setSelectedJob(job);
+    setIsDetailModalOpen(true);
+    onJobSelect(job);
+  };
+
+  const handleApply = (job: Job) => {
+    toast({
+      title: "Application Started!",
+      description: `Redirecting to apply for ${job.title} at ${job.company}...`,
+    });
+    // In a real app, this would redirect to the application page
+    if (job.url) {
+      window.open(job.url, '_blank');
     }
   };
 
-  const getMatchColor = (score: number) => {
-    if (score >= 80) return "bg-success text-success-foreground";
-    if (score >= 60) return "bg-warning text-warning-foreground";
-    return "bg-destructive text-destructive-foreground";
+  const handleSave = (job: Job) => {
+    const newSavedJobs = new Set(savedJobs);
+    if (newSavedJobs.has(job.id)) {
+      newSavedJobs.delete(job.id);
+      toast({
+        title: "Job Removed",
+        description: `Removed ${job.title} from saved jobs`,
+      });
+    } else {
+      newSavedJobs.add(job.id);
+      toast({
+        title: "Job Saved!",
+        description: `Added ${job.title} to your saved jobs`,
+      });
+    }
+    setSavedJobs(newSavedJobs);
   };
 
-  const openDetails = (job: NormalizedJob) => {
-    setDetailsJob(job);
-    setDetailsOpen(true);
+  const handleShare = (job: Job) => {
+    if (navigator.share) {
+      navigator.share({
+        title: job.title,
+        text: `Check out this job: ${job.title} at ${job.company}`,
+        url: window.location.href
+      });
+    } else {
+      navigator.clipboard.writeText(`${job.title} at ${job.company} - ${window.location.href}`);
+      toast({
+        title: "Link Copied!",
+        description: "Job link copied to clipboard",
+      });
+    }
   };
 
-  const perSourceSummary = jobs.reduce<Record<string, number>>((acc, j) => {
-    acc[j.source] = (acc[j.source] || 0) + 1;
-    return acc;
-  }, {});
+  const getJobTypeColor = (type: string) => {
+    const colors = {
+      'full-time': 'bg-blue-100 text-blue-800 border-blue-200',
+      'part-time': 'bg-green-100 text-green-800 border-green-200',
+      'contract': 'bg-purple-100 text-purple-800 border-purple-200',
+      'internship': 'bg-orange-100 text-orange-800 border-orange-200',
+      'remote': 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
 
-  const totalPages = Math.max(1, Math.ceil(jobs.length / PAGE_SIZE));
-  const startIndex = (page - 1) * PAGE_SIZE;
-  const pageJobs = jobs.slice(startIndex, startIndex + PAGE_SIZE);
+  const getExperienceColor = (level: string) => {
+    const colors = {
+      'entry': 'bg-green-100 text-green-800 border-green-200',
+      'mid': 'bg-blue-100 text-blue-800 border-blue-200',
+      'senior': 'bg-purple-100 text-purple-800 border-purple-200',
+      'executive': 'bg-red-100 text-red-800 border-red-200'
+    };
+    return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.location) count++;
+    if (filters.jobType !== 'all') count++;
+    if (filters.experienceLevel !== 'all') count++;
+    if (filters.industry !== 'all') count++;
+    if (filters.remote) count++;
+    if (filters.featured) count++;
+    if (filters.urgent) count++;
+    if (filters.visaSponsorship) count++;
+    if (filters.equity) count++;
+    if (filters.selectedTags.length > 0) count++;
+    return count;
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Job Search
-          </CardTitle>
-          <CardDescription>
-            Find jobs that match your skills and experience
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-3">
-            <div className="flex flex-col md:flex-row gap-2">
-              <div className="md:flex-1">
+    <div className="space-y-8">
+      {/* Search and Filters - Exact same as Jobs page */}
+      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <CardContent className="p-8">
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              placeholder="Search jobs, companies, or keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-4 py-4 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
+            />
+            <Button
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700"
+              size="sm"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* All Filters in Toolbar */}
+          <div className="space-y-6">
+            {/* Main Filter Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Location */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </label>
                 <Input
-                  placeholder="Search keywords (e.g., React, Frontend, AWS)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
+                  placeholder="City, State, Country"
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  className="border-2"
                 />
               </div>
-              <Button onClick={handleSearch} disabled={isLoading} className="md:w-auto w-full">
-                {isLoading ? "Searching..." : "Search"}
-              </Button>
+
+              {/* Job Type */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Job Type
+                </label>
+                <Select value={filters.jobType} onValueChange={(value) => handleFilterChange('jobType', value)}>
+                  <SelectTrigger className="border-2">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="full-time">Full Time</SelectItem>
+                    <SelectItem value="part-time">Part Time</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="internship">Internship</SelectItem>
+                    <SelectItem value="remote">Remote</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Experience Level */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Experience
+                </label>
+                <Select value={filters.experienceLevel} onValueChange={(value) => handleFilterChange('experienceLevel', value)}>
+                  <SelectTrigger className="border-2">
+                    <SelectValue placeholder="All Levels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="entry">Entry Level</SelectItem>
+                    <SelectItem value="mid">Mid Level</SelectItem>
+                    <SelectItem value="senior">Senior Level</SelectItem>
+                    <SelectItem value="executive">Executive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Industry */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Industry
+                </label>
+                <Select value={filters.industry} onValueChange={(value) => handleFilterChange('industry', value)}>
+                  <SelectTrigger className="border-2">
+                    <SelectValue placeholder="All Industries" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Industries</SelectItem>
+                    {industries.map(industry => (
+                      <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div id="filters" className="rounded-lg border bg-muted/30 p-3">
-              <div className="flex items-center gap-2 text-sm font-medium mb-2"><Filter className="h-4 w-4" /> Filters</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4 text-muted-foreground" />
-                  <Select value={region} onValueChange={(v) => setRegion(v as RegionFilter)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          <span className="animate-pulse">{REGION_META[region].flag}</span>
-                          <span>{REGION_META[region].label}</span>
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(REGION_META).map(([value, meta]) => (
-                        <SelectItem key={value} value={value}>
-                          <div className="flex items-center gap-2">
-                            <span className="animate-pulse">{meta.flag}</span>
-                            <span>{meta.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch id="remote-only" checked={remoteOnly} onCheckedChange={setRemoteOnly} />
-                  <label htmlFor="remote-only" className="text-sm text-foreground">Remote only</label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch id="use-geo" checked={useGeo} onCheckedChange={(v) => { setUseGeo(v); if (v) detectGeolocation(); }} />
-                  <label htmlFor="use-geo" className="text-sm text-foreground flex items-center gap-1"><Crosshair className="h-4 w-4" /> Use my location</label>
-                  {useGeo && geoLabel && (
-                    <Badge variant="secondary" className="ml-auto">{geoLabel}</Badge>
-                  )}
+            {/* Salary Range */}
+            <div className="space-y-4">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Salary Range: ${filters.salaryRange[0].toLocaleString()} - ${filters.salaryRange[1].toLocaleString()}
+              </label>
+              <Slider
+                value={filters.salaryRange}
+                onValueChange={(value) => handleFilterChange('salaryRange', value)}
+                max={200000}
+                min={0}
+                step={5000}
+                className="w-full"
+              />
+            </div>
+
+            {/* Quick Filter Buttons */}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant={filters.remote ? 'default' : 'outline'}
+                  onClick={() => handleFilterChange('remote', !filters.remote)}
+                  className="border-2"
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  Remote
+                </Button>
+                <Button
+                  variant={filters.featured ? 'default' : 'outline'}
+                  onClick={() => handleFilterChange('featured', !filters.featured)}
+                  className="border-2"
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Featured
+                </Button>
+                <Button
+                  variant={filters.urgent ? 'default' : 'outline'}
+                  onClick={() => handleFilterChange('urgent', !filters.urgent)}
+                  className="border-2"
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Urgent
+                </Button>
+                <Button
+                  variant={filters.visaSponsorship ? 'default' : 'outline'}
+                  onClick={() => handleFilterChange('visaSponsorship', !filters.visaSponsorship)}
+                  className="border-2"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Visa Sponsorship
+                </Button>
+                <Button
+                  variant={filters.equity ? 'default' : 'outline'}
+                  onClick={() => handleFilterChange('equity', !filters.equity)}
+                  className="border-2"
+                >
+                  <Diamond className="h-4 w-4 mr-2" />
+                  Equity
+                </Button>
+              </div>
+
+              {/* Skills & Tags */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Skills & Tags
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map(tag => (
+                    <Button
+                      key={tag}
+                      variant={filters.selectedTags.includes(tag) ? 'default' : 'outline'}
+                      onClick={() => handleTagToggle(tag)}
+                      size="sm"
+                      className="border-2"
+                    >
+                      {tag}
+                    </Button>
+                  ))}
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="text-sm">
-                  <div className="font-medium mb-1">Sources</div>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_SOURCES.map(src => {
-                      const checked = selectedSources.includes(src);
-                      return (
-                        <button
-                          key={src}
-                          onClick={() => setSelectedSources(checked ? selectedSources.filter(s => s !== src) : [...selectedSources, src])}
-                          className={`px-3 py-1 rounded-full border text-xs ${checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-foreground/80 hover:text-primary border-muted-foreground/30'}`}
-                        >
-                          {src}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium mb-1">Per-source limit</div>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" min={5} max={100} value={perSourceLimit}
-                      onChange={(e) => setPerSourceLimit(Math.max(5, Math.min(100, Number(e.target.value) || 30)))}
-                      className="w-28" />
-                    <span className="text-muted-foreground text-xs">results/source</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch id="include-worldwide" checked={includeWorldwideRemote} onCheckedChange={setIncludeWorldwideRemote} />
-                  <label htmlFor="include-worldwide" className="text-sm text-foreground">Include worldwide "Remote" in region</label>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-4">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-48 border-2">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="relevance">Most Relevant</SelectItem>
+                    <SelectItem value="date">Newest First</SelectItem>
+                    <SelectItem value="salary">Highest Salary</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <div className="flex border-2 border-gray-200 rounded-lg">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="rounded-r-none"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="rounded-l-none"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              {missingKeys.length > 0 && (
-                <div className="mt-3 text-xs text-muted-foreground">
-                  Some sources need API keys: {missingKeys.join(', ')}
-                </div>
-              )}
-              <div className="mt-3 flex items-center gap-2 text-sm">
-                <Switch id="sort-relevance" checked={sortByRelevance} onCheckedChange={setSortByRelevance} />
-                <label htmlFor="sort-relevance" className="text-foreground">Sort by relevance</label>
+              
+              <div className="flex items-center gap-2">
+                {getActiveFiltersCount() > 0 && (
+                  <Badge variant="destructive" className="mr-2">
+                    {getActiveFiltersCount()} filters active
+                  </Badge>
+                )}
+                <Button variant="outline" onClick={clearFilters} className="border-2">
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
               </div>
             </div>
           </div>
-
-          {error && (
-            <div className="text-destructive text-sm mt-3">{error}</div>
-          )}
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-10">
-            <div className="relative h-16 w-16">
-              <div className="absolute inset-0 rounded-full border-4 border-primary/30"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-              <div className="absolute inset-2 rounded-full bg-primary/10 animate-pulse"></div>
-            </div>
-            <div className="mt-3 text-sm text-muted-foreground">
-              {progress ? (
-                <span>
-                  Loading {progress.completed}/{progress.total} sources{progress.last ? ` — ${progress.last.source} (+${progress.last.count})` : ''}
-                </span>
-              ) : (
-                <span>Fetching jobs…</span>
-              )}
-            </div>
+      {/* Results Section */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {filteredJobs.length} Jobs Found
+          </h2>
+          <p className="text-gray-600 mt-1">
+            {searchQuery ? `Results for "${searchQuery}"` : 'All available positions'}
+            {filters.location && ` in ${filters.location}`}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <RefreshCw className="h-4 w-4" />
+            <span>Updated just now</span>
           </div>
-        )}
-        {!isLoading && jobs.length > 0 && (
-          <div className="text-xs text-muted-foreground px-2">
-            Sources: {Object.entries(perSourceSummary).map(([s,c]) => `${s}: ${c}`).join(' • ')}
-          </div>
-        )}
-        {pageJobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-4 md:p-6">
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                      <button onClick={() => openDetails(job)} className="text-left">
-                        <h3 className="text-lg sm:text-xl font-semibold text-foreground hover:underline break-words">{job.title}</h3>
-                      </button>
-                      <Badge variant="secondary" className="capitalize self-start">{job.source}</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <Building2 className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{job.company}</span>
-                      </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{job.location || "Remote"}</span>
-                      </div>
-                      {job.salary && (
-                        <div className="flex items-center gap-1 min-w-0">
-                          <DollarSign className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{job.salary}</span>
-                        </div>
+          
+          <Button variant="outline" className="border-2">
+            <Bell className="h-4 w-4 mr-2" />
+            Create Alert
+          </Button>
+        </div>
+      </div>
+
+      {/* No Results */}
+      {filteredJobs.length === 0 && (
+        <Card className="text-center py-16 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+          <CardContent>
+            <div className="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Briefcase className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">No jobs found</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Try adjusting your search criteria or filters to find more opportunities.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={clearFilters} className="bg-blue-600">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+              <Button variant="outline" onClick={() => setSearchQuery('')}>
+                <Search className="h-4 w-4 mr-2" />
+                Clear Search
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job Cards Grid */}
+      {filteredJobs.length > 0 && (
+        <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+          {filteredJobs.map((job) => (
+            <Card 
+              key={job.id} 
+              className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm cursor-pointer"
+              onClick={() => handleJobClick(job)}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {job.title}
+                      </h3>
+                      {job.featured && (
+                        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                          <Star className="h-3 w-3 mr-1" />
+                          Featured
+                        </Badge>
                       )}
-                      {job.posted && (
-                        <div className="flex items-center gap-1 min-w-0">
-                          <Clock className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{job.posted}</span>
-                        </div>
+                      {job.urgent && (
+                        <Badge className="bg-red-100 text-red-800 border-red-200">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Urgent
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-lg font-semibold text-gray-700 mb-1">{job.company}</p>
+                    <div className="flex items-center gap-2 text-gray-600 mb-3">
+                      <MapPin className="h-4 w-4" />
+                      <span>{job.location}</span>
+                      {job.remote && (
+                        <>
+                          <span>•</span>
+                          <Globe className="h-4 w-4" />
+                          <span>Remote</span>
+                        </>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
-                    {job.url && (
-                      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
-                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1">
-                          View <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    <Button 
-                      onClick={() => onJobSelect(job)}
-                      variant={selectedJob?.id === job.id ? "default" : "outline"}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
                       size="sm"
-                      className={`w-full sm:w-auto ${selectedJob?.id === job.id ? "bg-success hover:bg-success/90" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSave(job);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      {selectedJob?.id === job.id ? "Selected ✓" : "Select Job"}
+                      <Heart className={`h-4 w-4 ${savedJobs.has(job.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(job);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Share2 className="h-4 w-4 text-gray-400" />
                     </Button>
                   </div>
                 </div>
-                {job.description && (
-                  <p className="text-foreground text-sm line-clamp-3" dangerouslySetInnerHTML={{ __html: job.description }} />
-                )}
-                {job.requirements && job.requirements.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {job.requirements.slice(0, 6).map((req, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">{req}</Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {!isLoading && pageJobs.length === 0 && (
-          <div className="text-sm text-muted-foreground px-2">No results yet. Try searching for a role like "React Developer".</div>
-        )}
-      </div>
 
-      {jobs.length > PAGE_SIZE && (
-        <div className="flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.max(1, p - 1)); }} />
-              </PaginationItem>
-              {Array.from({ length: totalPages }).slice(0, 5).map((_, idx) => {
-                const p = idx + Math.max(1, Math.min(page - 2, totalPages - 4));
-                return (
-                  <PaginationItem key={p}>
-                    <PaginationLink href="#" isActive={p === page} onClick={(e) => { e.preventDefault(); setPage(p); }}>
-                      {p}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              <PaginationItem>
-                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPage(p => Math.min(totalPages, p + 1)); }} />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge className={getJobTypeColor(job.type)}>
+                    {job.type.replace('-', ' ').toUpperCase()}
+                  </Badge>
+                  <Badge className={getExperienceColor(job.experienceLevel)}>
+                    {job.experienceLevel.toUpperCase()}
+                  </Badge>
+                  {job.visaSponsorship && (
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Visa Sponsorship
+                    </Badge>
+                  )}
+                  {job.equity && (
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                      <Diamond className="h-3 w-3 mr-1" />
+                      Equity
+                    </Badge>
+                  )}
+                </div>
+
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {job.description}
+                </p>
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      <span>${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>{job.applications} applicants</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{job.views} views</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                    <span className="text-sm font-medium">{job.rating}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {job.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {job.tags.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{job.tags.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Calendar className="h-4 w-4" />
+                    <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleJobClick(job);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApply(job);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Apply Now
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
-      <JobDetails job={detailsJob} open={detailsOpen} onOpenChange={setDetailsOpen} />
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <JobDetailModal
+          job={selectedJob}
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedJob(null);
+          }}
+          onApply={handleApply}
+          onSave={handleSave}
+          onShare={handleShare}
+          isSaved={savedJobs.has(selectedJob.id)}
+        />
+      )}
     </div>
   );
 };
+
+export default JobSearch;

@@ -8,13 +8,12 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <img 
                 src="/logo.png" 
                 alt="Gigm8 Logo" 
-                className="h-8 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
-              <span className="text-lg font-bold text-gray-900">Gigm8</span>
             </div>
             <p className="text-sm text-gray-600">
               AI-powered career platform helping job seekers find their dream roles and optimize their resumes.

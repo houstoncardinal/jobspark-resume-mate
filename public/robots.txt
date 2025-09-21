@@ -1,27 +1,42 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://gigm8.com/sitemap.xml
-
-# Social Media Crawlers
-User-agent: facebookexternalhit
+# Allow all major search engines
+User-agent: Googlebot
 Allow: /
 
-User-agent: Twitterbot
+User-agent: Bingbot
 Allow: /
 
-User-agent: LinkedInBot
+User-agent: Slurp
 Allow: /
 
-User-agent: WhatsApp
+User-agent: DuckDuckBot
 Allow: /
 
-User-agent: TelegramBot
+User-agent: Baiduspider
 Allow: /
 
-# Allow access to images
-Allow: /thumbnail-og.png
-Allow: /thumbnail.png
-Allow: /favicon.ico
-Allow: /logo.svg
+User-agent: YandexBot
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+
+# Allow important pages
+Allow: /builder
+Allow: /jobs
+Allow: /candidates
+Allow: /blog
+Allow: /signin
+Allow: /profile/
+
+# Sitemap location
+Sitemap: https://www.gigm8.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1

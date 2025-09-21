@@ -1,0 +1,674 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { SecureFileUpload } from '@/components/file-upload/SecureFileUpload';
+import { FileSecurityScanner } from '@/lib/fileSecurity';
+import { TextExtractor } from '@/lib/textExtraction';
+import { 
+  Upload, 
+  Download, 
+  Save, 
+  Eye, 
+  Edit3, 
+  Sparkles, 
+  FileText, 
+  Copy, 
+  Trash2, 
+  Plus,
+  X,
+  Check,
+  Star,
+  Palette,
+  Layout,
+  Type,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Quote,
+  Link,
+  Image,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Languages,
+  Code,
+  Heart,
+  Music,
+  Camera,
+  BookOpen,
+  Zap,
+  Target,
+  TrendingUp,
+  Calendar,
+  Clock,
+  Globe,
+  Building2,
+  Users,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  RotateCw,
+  Maximize2,
+  Minimize2,
+  MoreHorizontal,
+  Shield,
+  AlertTriangle
+} from 'lucide-react';
+
+interface ResumeSection {
+  id: string;
+  type: 'header' | 'summary' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications' | 'languages' | 'interests' | 'custom';
+  title: string;
+  content: string;
+  order: number;
+  visible: boolean;
+}
+
+interface ResumeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'modern' | 'classic' | 'creative' | 'minimal';
+  preview: string;
+  sections: ResumeSection[];
+  styling: {
+    fontFamily: string;
+    fontSize: string;
+    colorScheme: string;
+ spacing: string;
+    layout: string;
+  };
+}
+
+interface UploadedFile {
+  id: string;
+  name: string;
+  content: string;
+  securityScore: number;
+  threats: string[];
+  metadata?: {
+    wordCount: number;
+    characterCount: number;
+    language: string;
+  };
+}
+
+const resumeTemplates: ResumeTemplate[] = [
+  {
+    id: 'modern-professional',
+    name: 'Modern Professional',
+    description: 'Clean, contemporary design perfect for tech and business roles',
+    category: 'modern',
+    preview: 'bg-gradient-to-br from-blue-50 to-indigo-100',
+    sections: [
+      { id: 'header', type: 'header', title: 'Contact Information', content: '', order: 1, visible: true },
+      { id: 'summary', type: 'summary', title: 'Professional Summary', content: '', order: 2, visible: true },
+      { id: 'experience', type: 'experience', title: 'Work Experience', content: '', order: 3, visible: true },
+      { id: 'education', type: 'education', title: 'Education', content: '', order: 4, visible: true },
+      { id: 'skills', type: 'skills', title: 'Skills', content: '', order: 5, visible: true },
+      { id: 'projects', type: 'projects', title: 'Projects', content: '', order: 6, visible: true }
+    ],
+    styling: {
+      fontFamily: 'Inter',
+      fontSize: 'medium',
+      colorScheme: 'blue',
+      spacing: 'comfortable',
+      layout: 'single-column'
+    }
+  },
+  {
+    id: 'classic-executive',
+    name: 'Classic Executive',
+    description: 'Traditional, authoritative design for senior positions',
+    category: 'classic',
+    preview: 'bg-gradient-to-br from-gray-50 to-slate-100',
+    sections: [
+      { id: 'header', type: 'header', title: 'Contact Information', content: '', order: 1, visible: true },
+      { id: 'summary', type: 'summary', title: 'Executive Summary', content: '', order: 2, visible: true },
+      { id: 'experience', type: 'experience', title: 'Professional Experience', content: '', order: 3, visible: true },
+      { id: 'education', type: 'education', title: 'Education & Certifications', content: '', order: 4, visible: true },
+      { id: 'skills', type: 'skills', title: 'Core Competencies', content: '', order: 5, visible: true },
+      { id: 'awards', type: 'certifications', title: 'Awards & Recognition', content: '', order: 6, visible: true }
+    ],
+    styling: {
+      fontFamily: 'Times New Roman',
+      fontSize: 'medium',
+      colorScheme: 'gray',
+      spacing: 'compact',
+      layout: 'single-column'
+    }
+  },
+  {
+    id: 'creative-portfolio',
+    name: 'Creative Portfolio',
+    description: 'Bold, artistic design for creative professionals',
+    category: 'creative',
+    preview: 'bg-gradient-to-br from-purple-50 to-pink-100',
+    sections: [
+      { id: 'header', type: 'header', title: 'About Me', content: '', order: 1, visible: true },
+      { id: 'summary', type: 'summary', title: 'Creative Vision', content: '', order: 2, visible: true },
+      { id: 'experience', type: 'experience', title: 'Professional Experience', content: '', order: 3, visible: true },
+      { id: 'education', type: 'education', title: 'Education', content: '', order: 4, visible: true },
+      { id: 'skills', type: 'skills', title: 'Skills & Tools', content: '', order: 5, visible: true },
+      { id: 'projects', type: 'projects', title: 'Featured Projects', content: '', order: 6, visible: true },
+      { id: 'interests', type: 'interests', title: 'Interests & Hobbies', content: '', order: 7, visible: true }
+    ],
+    styling: {
+      fontFamily: 'Poppins',
+      fontSize: 'large',
+      colorScheme: 'purple',
+      spacing: 'spacious',
+      layout: 'two-column'
+    }
+  },
+  {
+    id: 'minimal-clean',
+    name: 'Minimal Clean',
+    description: 'Simple, elegant design that lets your content shine',
+    category: 'minimal',
+    preview: 'bg-gradient-to-br from-green-50 to-emerald-100',
+    sections: [
+      { id: 'header', type: 'header', title: 'Contact Information', content: '', order: 1, visible: true },
+      { id: 'summary', type: 'summary', title: 'Summary', content: '', order: 2, visible: true },
+      { id: 'experience', type: 'experience', title: 'Experience', content: '', order: 3, visible: true },
+      { id: 'education', type: 'education', title: 'Education', content: '', order: 4, visible: true },
+      { id: 'skills', type: 'skills', title: 'Skills', content: '', order: 5, visible: true }
+    ],
+    styling: {
+      fontFamily: 'Helvetica',
+      fontSize: 'small',
+      colorScheme: 'green',
+      spacing: 'compact',
+      layout: 'single-column'
+    }
+  }
+];
+
+export const ResumeBuilder = () => {
+  const [resumeTitle, setResumeTitle] = useState('My Resume');
+  const [selectedTemplate, setSelectedTemplate] = useState<ResumeTemplate>(resumeTemplates[0]);
+  const [resumeSections, setResumeSections] = useState<ResumeSection[]>(resumeTemplates[0].sections);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleTemplateSelect = (template: ResumeTemplate) => {
+    setSelectedTemplate(template);
+    setResumeSections(template.sections);
+  };
+
+  const handleSectionUpdate = (sectionId: string, content: string) => {
+    setResumeSections(sections =>
+      sections.map(section =>
+        section.id === sectionId ? { ...section, content } : section
+      )
+    );
+  };
+
+  const handleSectionToggle = (sectionId: string) => {
+    setResumeSections(sections =>
+      sections.map(section =>
+        section.id === sectionId ? { ...section, visible: !section.visible } : section
+      )
+    );
+  };
+
+  const handleSectionReorder = (fromIndex: number, toIndex: number) => {
+    const newSections = [...resumeSections];
+    const [movedSection] = newSections.splice(fromIndex, 1);
+    newSections.splice(toIndex, 0, movedSection);
+    setResumeSections(newSections.map((section, index) => ({ ...section, order: index + 1 })));
+  };
+
+  const handleFileProcessed = async (result: any) => {
+    if (result.status === 'success' && result.extractedText) {
+      const uploadedFile: UploadedFile = {
+        id: result.id,
+        name: result.file.name,
+        content: result.extractedText,
+        securityScore: result.securityScore,
+        threats: result.threats,
+        metadata: {
+          wordCount: result.extractedText.split(/\s+/).length,
+          characterCount: result.extractedText.length,
+          language: 'en' // Default, could be enhanced with language detection
+        }
+      };
+
+      setUploadedFiles(prev => [...prev, uploadedFile]);
+      
+      // Auto-parse the content and create sections
+      const parsedSections = parseResumeContent(result.extractedText);
+      if (parsedSections.length > 0) {
+        setResumeSections(parsedSections);
+        toast({
+          title: "Resume Imported!",
+          description: "Your resume has been parsed and imported into the builder.",
+        });
+      }
+    }
+  };
+
+  const handleFileRemoved = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
+  const parseResumeContent = (content: string): ResumeSection[] => {
+    const sections: ResumeSection[] = [];
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    let currentSection: ResumeSection | null = null;
+    let order = 1;
+
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      
+      // Detect section headers
+      if (lowerLine.includes('contact') || lowerLine.includes('personal information')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'header',
+          type: 'header',
+          title: 'Contact Information',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (lowerLine.includes('summary') || lowerLine.includes('objective') || lowerLine.includes('profile')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'summary',
+          type: 'summary',
+          title: 'Professional Summary',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (lowerLine.includes('experience') || lowerLine.includes('employment') || lowerLine.includes('work history')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'experience',
+          type: 'experience',
+          title: 'Work Experience',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (lowerLine.includes('education') || lowerLine.includes('academic')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'education',
+          type: 'education',
+          title: 'Education',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (lowerLine.includes('skills') || lowerLine.includes('competencies') || lowerLine.includes('technologies')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'skills',
+          type: 'skills',
+          title: 'Skills',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (lowerLine.includes('projects') || lowerLine.includes('portfolio')) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          id: 'projects',
+          type: 'projects',
+          title: 'Projects',
+          content: line + '\n',
+          order: order++,
+          visible: true
+        };
+      } else if (currentSection) {
+        // Add content to current section
+        currentSection.content += line + '\n';
+      }
+    }
+
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+
+    return sections.length > 0 ? sections : [
+      {
+        id: 'uploaded-content',
+        type: 'custom',
+        title: 'Uploaded Content',
+        content,
+        order: 1,
+        visible: true
+      }
+    ];
+  };
+
+  const handleSaveToProfile = async () => {
+    if (!user) {
+      toast({
+        title: "Please Sign In",
+        description: "You need to be signed in to save your resume.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Here you would typically save to your backend/database
+      // For now, we'll save to localStorage with user context
+      const resumeData = {
+        id: `resume-${Date.now()}`,
+        title: resumeTitle,
+        template: selectedTemplate.id,
+        sections: resumeSections,
+        createdAt: new Date().toISOString(),
+        userId: user.id
+      };
+
+      localStorage.setItem(`resume-${user.id}`, JSON.stringify(resumeData));
+      
+      toast({
+        title: "Resume Saved!",
+        description: "Your resume has been saved to your profile.",
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "There was an error saving your resume.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExport = () => {
+    // Simple text export - in production, you'd want PDF generation
+    const resumeText = resumeSections
+      .filter(section => section.visible)
+      .map(section => `${section.title}\n${section.content}`)
+      .join('\n\n');
+    
+    const blob = new Blob([resumeText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${resumeTitle.replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            AI Resume Builder
+          </h1>
+          <p className="text-lg text-muted-foreground mb-6">
+            Create professional resumes with AI assistance. Upload existing resumes or start from scratch.
+          </p>
+          
+          {/* Security Notice */}
+          <Alert className="max-w-2xl mx-auto mb-6">
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Secure File Upload:</strong> All uploaded files are automatically scanned for security threats. 
+              Only safe, text-based resume files are processed to protect your data.
+            </AlertDescription>
+          </Alert>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Sidebar - Templates and Tools */}
+          <div className="space-y-6">
+            {/* File Upload Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Upload Resume
+                </CardTitle>
+                <CardDescription>
+                  Upload your existing resume to get started quickly
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => setShowFileUpload(!showFileUpload)}
+                  className="w-full"
+                  variant={showFileUpload ? "outline" : "default"}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {showFileUpload ? 'Hide Upload' : 'Upload Files'}
+                </Button>
+                
+                {showFileUpload && (
+                  <div className="mt-4">
+                    <SecureFileUpload
+                      onFileProcessed={handleFileProcessed}
+                      onFileRemoved={handleFileRemoved}
+                      maxFileSize={10 * 1024 * 1024} // 10MB
+                      maxFiles={3}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Uploaded Files
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {uploadedFiles.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium text-sm">{file.name}</span>
+                          <Badge 
+                            variant={file.securityScore >= 80 ? "default" : "destructive"}
+                            className="text-xs"
+                          >
+                            {file.securityScore}%
+                          </Badge>
+                        </div>
+                        {file.metadata && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {file.metadata.wordCount} words • {file.metadata.characterCount} characters
+                          </p>
+                        )}
+                        {file.threats.length > 0 && (
+                          <div className="mt-1">
+                            <p className="text-xs text-red-600 font-medium">Issues:</p>
+                            <ul className="text-xs text-red-600 list-disc list-inside">
+                              {file.threats.slice(0, 2).map((threat, index) => (
+                                <li key={index}>{threat}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleFileRemoved(file.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Template Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="h-5 w-5" />
+                  Choose Template
+                </CardTitle>
+                <CardDescription>
+                  Select a template that matches your style
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {resumeTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedTemplate.id === template.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleTemplateSelect(template)}
+                  >
+                    <div className={`w-full h-16 rounded ${template.preview} mb-2`} />
+                    <h3 className="font-medium">{template.name}</h3>
+                    <p className="text-sm text-gray-600">{template.description}</p>
+                    <Badge variant="outline" className="text-xs mt-1">
+                      {template.category}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button onClick={handleSaveToProfile} disabled={isSaving} className="w-full">
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Saving...' : 'Save to Profile'}
+                </Button>
+                <Button onClick={handleExport} variant="outline" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Resume
+                </Button>
+                <Button 
+                  onClick={() => setIsPreviewMode(!isPreviewMode)} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {isPreviewMode ? 'Edit Mode' : 'Preview Mode'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content - Resume Editor */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Edit3 className="h-5 w-5" />
+                      Resume Editor
+                    </CardTitle>
+                    <CardDescription>
+                      {isPreviewMode ? 'Preview your resume' : 'Edit your resume sections'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={resumeTitle}
+                      onChange={(e) => setResumeTitle(e.target.value)}
+                      className="w-48"
+                      placeholder="Resume Title"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isPreviewMode ? (
+                  <div className="space-y-6">
+                    {resumeSections
+                      .filter(section => section.visible)
+                      .sort((a, b) => a.order - b.order)
+                      .map((section) => (
+                        <div key={section.id} className="border-b pb-4 last:border-b-0">
+                          <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
+                          <div className="text-gray-700 whitespace-pre-wrap">
+                            {section.content || 'No content added yet.'}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {resumeSections
+                      .sort((a, b) => a.order - b.order)
+                      .map((section) => (
+                        <div key={section.id} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold">{section.title}</h3>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSectionToggle(section.id)}
+                              >
+                                {section.visible ? 'Hide' : 'Show'}
+                              </Button>
+                            </div>
+                          </div>
+                          <Textarea
+                            value={section.content}
+                            onChange={(e) => handleSectionUpdate(section.id, e.target.value)}
+                            placeholder={`Enter your ${section.title.toLowerCase()}...`}
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
