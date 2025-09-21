@@ -7,13 +7,18 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ResumePreviewProps {
   template: ResumeTemplate;
-  resumeData: {
+  resumeData?: {
     text: string;
     sections?: { [key: string]: string };
   };
+  data?: any;
+  isFullscreen?: boolean;
+  isPreview?: boolean;
 }
 
-export const ResumePreview = ({ template, resumeData }: ResumePreviewProps) => {
+export const ResumePreview = ({ template, resumeData, data, isFullscreen, isPreview }: ResumePreviewProps) => {
+  // Use resumeData if provided, otherwise fallback to data or empty object
+  const resume = resumeData || data || { text: 'Your resume content will appear here...' };
   const { toast } = useToast();
 
   const handleDownload = () => {
@@ -83,7 +88,7 @@ export const ResumePreview = ({ template, resumeData }: ResumePreviewProps) => {
                 <div class="name">Your Name</div>
                 <div class="contact">your.email@example.com • (555) 123-4567 • City, State</div>
               </div>
-              <div class="content">${resumeData.text}</div>
+              <div class="content">${resume.text}</div>
             </div>
           </body>
         </html>
@@ -169,7 +174,7 @@ export const ResumePreview = ({ template, resumeData }: ResumePreviewProps) => {
                 lineHeight: '1.6'
               }}
             >
-              {resumeData.text}
+              {resume.text}
             </div>
           </div>
         </CardContent>

@@ -16,7 +16,17 @@ export const JobSourceStatus: React.FC<JobSourceStatusProps> = ({
 }) => {
   const [apiStatus, setApiStatus] = useState<Record<string, boolean>>({});
   const [testing, setTesting] = useState(false);
-  const [sources] = useState(getAvailableSources());
+  const [sources] = useState([
+    { id: 'usajobs', name: 'USAJobs', free: true, description: 'Government job listings' },
+    { id: 'adzuna', name: 'Adzuna', free: true, description: 'Global job search engine' },
+    { id: 'indeed', name: 'Indeed', free: false, description: 'Leading job board' },
+    { id: 'linkedin', name: 'LinkedIn', free: false, description: 'Professional network' },
+    { id: 'github', name: 'GitHub Jobs', free: true, description: 'Developer positions' },
+    { id: 'ziprecruiter', name: 'ZipRecruiter', free: false, description: 'Fast job matching' },
+    { id: 'rss', name: 'RSS Feeds', free: true, description: 'Custom RSS sources' },
+    { id: 'remoteok', name: 'RemoteOK', free: true, description: 'Remote opportunities' },
+    { id: 'mock', name: 'Mock Data', free: true, description: 'Test data source' }
+  ]);
 
   const testConnections = async () => {
     setTesting(true);

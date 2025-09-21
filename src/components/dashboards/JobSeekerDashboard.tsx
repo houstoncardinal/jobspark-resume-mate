@@ -13,7 +13,7 @@ export const JobSeekerDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Welcome, {user?.user_metadata?.full_name || user?.email || 'Job Seeker'}!</h1>
+      <h1 className="text-3xl font-bold">Welcome, {(user as any)?.user_metadata?.full_name || user?.email || 'Job Seeker'}!</h1>
       <p className="text-muted-foreground">Your personalized hub for career growth.</p>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

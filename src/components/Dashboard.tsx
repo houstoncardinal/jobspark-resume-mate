@@ -48,7 +48,7 @@ const Dashboard = () => {
   }
 
   // Check if user is super admin
-  const isSuperAdmin = user.user_metadata?.role === 'super_admin' || user.user_metadata?.role === 'admin';
+  const isSuperAdmin = (user as any).user_metadata?.role === 'super_admin' || (user as any).user_metadata?.role === 'admin';
 
   if (isSuperAdmin) {
     return (
@@ -166,7 +166,7 @@ const Dashboard = () => {
   }
 
   // Regular user role-based dashboard
-  switch (user.user_metadata?.role) {
+  switch ((user as any).user_metadata?.role) {
     case 'job_seeker':
       return <JobSeekerDashboard />;
     case 'recruiter':
@@ -187,7 +187,7 @@ const Dashboard = () => {
                 <CardDescription>Your account role is not defined. Please contact support.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={user ? () => user.signOut() : undefined} className="w-full bg-gradient-to-r from-red-600 to-orange-700 hover:from-red-700 hover:to-orange-800">
+                <Button onClick={() => (user as any).signOut?.()} className="w-full bg-gradient-to-r from-red-600 to-orange-700 hover:from-red-700 hover:to-orange-800">
                   Sign Out
                 </Button>
               </CardContent>
