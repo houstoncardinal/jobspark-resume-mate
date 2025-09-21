@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Adzuna API Test</title>
+</head>
+<body>
+    <h1>Adzuna API Test</h1>
+    <button onclick="testAdzuna()">Test Adzuna API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAdzuna() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = 'Testing Adzuna API...';
+            
+            try {
+                const response = await fetch('https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=a267a3f195378231d7d6d84eb88c510a&app_key=a267a3f195378231d7d6d84eb88c510a&what=software&where=United%20States&results_per_page=5&content_type=application/json');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultsDiv.innerHTML = `✅ Adzuna API Working! Found ${data.results?.length || 0} jobs`;
+                    
+                    if (data.results && data.results.length > 0) {
+                        resultsDiv.innerHTML += '<br><br>Sample Jobs:<br>';
+                        data.results.slice(0, 3).forEach((job, index) => {
+                            resultsDiv.innerHTML += `${index + 1}. ${job.title} at ${job.company?.display_name || 'Unknown Company'}<br>`;
+                        });
+                    }
+                } else {
+                    resultsDiv.innerHTML = `❌ Adzuna API Error: ${response.status}`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

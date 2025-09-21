@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { PAGE_SEO } from '@/lib/seo';
@@ -111,7 +110,6 @@ const ResumeTemplates = () => {
     <>
       <SEO seoData={PAGE_SEO['/resume-templates']} url="/resume-templates" />
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="container mx-auto px-4 py-6">
           {/* Header */}
           <div className="mb-6">

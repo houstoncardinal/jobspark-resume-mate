@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Website Debug Test</h1>
+    <div id="status" class="status info">Testing website...</div>
+    <div id="content"></div>
+    <div id="console-errors"></div>
+    <div id="network-errors"></div>
+
+    <script>
+        // Capture console errors
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const errors = [];
+        const warnings = [];
+
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            warnings.push(args.join(' '));
+            originalWarn.apply(console, args);
+        };
+
+        async function testWebsite() {
+            const statusDiv = document.getElementById('status');
+            const contentDiv = document.getElementById('content');
+            const consoleErrorsDiv = document.getElementById('console-errors');
+            const networkErrorsDiv = document.getElementById('network-errors');
+            
+            try {
+                // Test basic connectivity
+                const response = await fetch('http://localhost:8081');
+                if (response.ok) {
+                    const html = await response.text();
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Website is responding';
+                    
+                    // Check if React app is loading
+                    if (html.includes('react') || html.includes('vite')) {
+                        contentDiv.innerHTML = '✅ React app detected';
+                    } else {
+                        contentDiv.innerHTML = '⚠️ React app not detected';
+                    }
+                    
+                    // Check for specific error patterns
+                    if (html.includes('ErrorBoundary') || html.includes('Something went wrong')) {
+                        contentDiv.innerHTML += '<br>✅ Error boundary detected';
+                    }
+                    
+                    // Check for script loading
+                    if (html.includes('<script')) {
+                        contentDiv.innerHTML += '<br>✅ Scripts detected';
+                    }
+                    
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ Website error: ${response.status}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Connection error: ${error.message}`;
+                networkErrorsDiv.innerHTML = `<pre>${error.stack}</pre>`;
+            }
+            
+            // Display console errors after a delay
+            setTimeout(() => {
+                if (errors.length > 0) {
+                    consoleErrorsDiv.innerHTML = '<h3>Console Errors:</h3><pre>' + errors.join('\n') + '</pre>';
+                }
+                if (warnings.length > 0) {
+                    consoleErrorsDiv.innerHTML += '<h3>Console Warnings:</h3><pre>' + warnings.join('\n') + '</pre>';
+                }
+            }, 2000);
+        }
+        
+        // Test the main site in an iframe to catch runtime errors
+        function testMainSite() {
+            const iframe = document.createElement('iframe');
+            iframe.src = 'http://localhost:8081';
+            iframe.style.width = '100%';
+            iframe.style.height = '400px';
+            iframe.style.border = '1px solid #ccc';
+            iframe.onload = function() {
+                document.getElementById('content').innerHTML += '<br>✅ Main site loaded in iframe';
+            };
+            iframe.onerror = function() {
+                document.getElementById('content').innerHTML += '<br>❌ Main site failed to load in iframe';
+            };
+            document.body.appendChild(iframe);
+        }
+        
+        testWebsite();
+        testMainSite();
+    </script>
+</body>
+</html>

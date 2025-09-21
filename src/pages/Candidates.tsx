@@ -1,5 +1,3 @@
-/** @jsxImportSource react */import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -333,7 +331,6 @@ const Candidates = () => {
   if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="container mx-auto px-4 py-16 flex items-center justify-center">
           <Card className="w-full max-w-md text-center">
             <CardContent className="p-8">
@@ -355,7 +352,6 @@ const Candidates = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <main className="container mx-auto px-4 py-8">
         {/* Header Section */}

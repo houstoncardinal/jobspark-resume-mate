@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error Boundary Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Error Boundary Test</h1>
+    <div id="test1" class="test">Testing basic website load...</div>
+    <div id="test2" class="test">Testing error boundary...</div>
+    <div id="test3" class="test">Testing job search...</div>
+
+    <script>
+        async function runTests() {
+            // Test 1: Basic website load
+            try {
+                const response = await fetch('http://localhost:8081');
+                if (response.ok) {
+                    document.getElementById('test1').className = 'test success';
+                    document.getElementById('test1').textContent = '✅ Website loads successfully';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                document.getElementById('test1').className = 'test error';
+                document.getElementById('test1').textContent = `❌ Website load failed: ${error.message}`;
+            }
+
+            // Test 2: Check for error boundary
+            try {
+                const response = await fetch('http://localhost:8081');
+                const html = await response.text();
+                if (html.includes('ErrorBoundary') || html.includes('Something went wrong')) {
+                    document.getElementById('test2').className = 'test success';
+                    document.getElementById('test2').textContent = '✅ Error boundary detected in HTML';
+                } else {
+                    document.getElementById('test2').className = 'test error';
+                    document.getElementById('test2').textContent = '❌ Error boundary not detected';
+                }
+            } catch (error) {
+                document.getElementById('test2').className = 'test error';
+                document.getElementById('test2').textContent = `❌ Error checking error boundary: ${error.message}`;
+            }
+
+            // Test 3: Check for job search functionality
+            try {
+                const response = await fetch('http://localhost:8081');
+                const html = await response.text();
+                if (html.includes('JobSearch') || html.includes('job-search') || html.includes('Find Your Dream Job')) {
+                    document.getElementById('test3').className = 'test success';
+                    document.getElementById('test3').textContent = '✅ Job search component detected';
+                } else {
+                    document.getElementById('test3').className = 'test error';
+                    document.getElementById('test3').textContent = '❌ Job search component not detected';
+                }
+            } catch (error) {
+                document.getElementById('test3').className = 'test error';
+                document.getElementById('test3').textContent = `❌ Error checking job search: ${error.message}`;
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

@@ -1,8 +1,6 @@
-/** @jsxImportSource react */
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+
 import { SEO } from '@/components/SEO';
 import { PAGE_SEO } from '@/lib/seo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -128,7 +126,6 @@ const SignIn = () => {
     <>
       <SEO seoData={PAGE_SEO['/signin']} url="/signin" />
       <div className="min-h-screen flex flex-col">
-        <Header />
         <main className="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-purple-50">
           <Card className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 shadow-xl rounded-xl overflow-hidden">
             {/* Left Column: Role Info */}
@@ -281,7 +278,7 @@ const SignIn = () => {
             </div>
           </Card>
         </main>
-        <Footer />
+  
       </div>
     </>
   );

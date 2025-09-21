@@ -1,6 +1,4 @@
-/** @jsxImportSource react */import React from 'react';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+
 import { SEO } from '@/components/SEO';
 import { PAGE_SEO } from '@/lib/seo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,7 +103,6 @@ const Blog = () => {
     <>
       <SEO seoData={PAGE_SEO['/blog']} url="/blog" />
       <div className="min-h-screen bg-gray-50">
-        <Header />
         
         <main className="container mx-auto px-4 py-8">
           {/* Header Section */}
@@ -256,7 +253,7 @@ const Blog = () => {
           </Card>
         </main>
         
-        <Footer />
+  
       </div>
     </>
   );

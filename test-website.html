@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Test</title>
+</head>
+<body>
+    <h1>Website Status Test</h1>
+    <div id="status"></div>
+    <div id="content"></div>
+
+    <script>
+        async function testWebsite() {
+            const statusDiv = document.getElementById('status');
+            const contentDiv = document.getElementById('content');
+            
+            try {
+                const response = await fetch('http://localhost:8081');
+                if (response.ok) {
+                    const html = await response.text();
+                    statusDiv.innerHTML = '✅ Website is responding';
+                    
+                    // Check if React app is loading
+                    if (html.includes('react') || html.includes('vite')) {
+                        contentDiv.innerHTML = '✅ React app detected';
+                    } else {
+                        contentDiv.innerHTML = '⚠️ React app not detected';
+                    }
+                } else {
+                    statusDiv.innerHTML = `❌ Website error: ${response.status}`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Connection error: ${error.message}`;
+            }
+        }
+        
+        testWebsite();
+    </script>
+</body>
+</html>

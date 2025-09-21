@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { setSeo, injectJsonLd } from "@/lib/seo";
 
@@ -51,7 +50,6 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>

@@ -1,0 +1,369 @@
+import React, { useState, useEffect } from 'react';
+import { Footer } from '@/components/Footer';
+import { SEO } from '@/components/SEO';
+import { PAGE_SEO } from '@/lib/seo';
+import { ResumeUpload } from '@/components/ResumeUpload';
+import { ResumeBuilder } from '@/components/ResumeBuilder';
+import { ResumeOptimizer } from '@/components/ResumeOptimizer';
+import { useToast } from '@/hooks/use-toast';
+import { searchAllJobs, getAvailableSources, testAPIConnections, JobListing, JobSearchParams } from '@/lib/job-aggregator';
+import { JobDetailModal } from '@/components/JobDetailModal';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Search as SearchIcon, 
+  FileText, 
+  CheckCircle2, 
+  Sparkles,
+  Loader2,
+  Filter,
+  SortAsc,
+  Grid,
+  List,
+  Heart,
+  Share2,
+  ExternalLink,
+  Globe,
+  Users,
+  TrendingUp,
+  Shield,
+  Zap,
+  Target,
+  Award,
+  Building2,
+  Sliders,
+  RotateCcw,
+  Diamond,
+  Tag,
+  Bell,
+  Plus,
+  Minus,
+  Search,
+  MapPin,
+  Briefcase,
+  Clock,
+  DollarSign,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  X,
+  RefreshCw,
+  BarChart3,
+  Activity,
+  FileCheck,
+  AlertTriangle,
+  ArrowRight,
+  Star,
+  MessageCircle,
+  Calendar,
+  Phone,
+  Mail,
+  ChevronRight,
+  Play,
+  BookOpen,
+  Lightbulb,
+  Rocket,
+  Crown,
+  Flame,
+  Settings,
+  UserPlus,
+  LogIn,
+  LogOut,
+  ChevronDown,
+  LayoutDashboard,
+  UserSearch,
+  ClipboardList,
+  LineChart,
+  LifeBuoy,
+  GraduationCap,
+  Network
+} from 'lucide-react';
+
+const Index = () => {
+  const [activeTab, setActiveTab] = useState("search");
+  const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
+  const [uploadedResume, setUploadedResume] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState('');
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useState<JobSearchParams>({
+    query: 'software engineer',
+    location: '',
+    remote: false,
+    sources: ['usajobs', 'remoteok', 'rss'],
+    limit: 20
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'salary'>('relevance');
+  const [apiStatus, setApiStatus] = useState<Record<string, boolean>>({});
+  const [sources, setSources] = useState(getAvailableSources());
+  const { toast } = useToast();
+
+  const handleJobSelect = (job: JobListing) => {
+    setSelectedJob(job);
+    setActiveTab("ats");
+  };
+
+  const handleResumeUpload = (file: File) => {
+    setUploadedResume(file);
+    setActiveTab("ats");
+  };
+
+  return (
+    <>
+      <SEO seoData={PAGE_SEO['/']} url="/" />
+      <div className="min-h-screen bg-gray-50">
+        
+        <main className="container mx-auto px-4 py-8 pb-32">
+          {/* Hero Section - Two Column */}
+          <section className="mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left Column - Original Text Content */}
+              <div className="text-center lg:text-left">
+                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+                  Find Your <span className="text-blue-600">Dream Job</span>
+                  <br />
+                  <span className="text-2xl md:text-4xl text-gray-600 font-normal">
+                    Match • Optimize • Apply
+                  </span>
+                </h1>
+                <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto lg:mx-0">
+                  Discover high-quality job listings worldwide, analyze your resume against any role, 
+                  and use AI to optimize your application for better results.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Button 
+                    size="lg" 
+                    onClick={() => document.getElementById('job-search')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="text-lg px-8 py-6"
+                  >
+                    <SearchIcon className="h-5 w-5 mr-2" />
+                    Start Job Search
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    onClick={() => window.location.href = "/builder"}
+                    className="text-lg px-8 py-6"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    Resume Builder
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right Column - Image */}
+              <div className="relative">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                  <img 
+                    src="/bg.jpg" 
+                    alt="Professional job search and career development" 
+                    className="w-full h-auto object-cover"
+                  />
+                  {/* Overlay for better text contrast if needed */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tools Panel */}
+          <section className="mb-12">
+            <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-6">
+              <h2 className="text-2xl font-bold text-center mb-6">Powerful Job Search Tools</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <SearchIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2">1. Search Jobs</h3>
+                  <p className="text-sm text-gray-600">Find opportunities across multiple job boards</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2">2. Resume Builder</h3>
+                  <p className="text-sm text-gray-600">Analyze your resume against job requirements</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Sparkles className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2">3. AI Optimize</h3>
+                  <p className="text-sm text-gray-600">Get AI-powered resume improvements</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Main Content Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            {/* Desktop/Tablet Tabs - Chrome-like Design */}
+            <div className="hidden md:block">
+              <div className="bg-gray-100/30 backdrop-blur-sm border border-gray-200 rounded-t-xl p-1">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setActiveTab("search")}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-t-lg transition-all duration-200 relative ${
+                      activeTab === "search" 
+                        ? "bg-green-100 text-green-700 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    }`}
+                  >
+                    <SearchIcon className="h-4 w-4" />
+                    <span className="font-medium">Job Search</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("upload")}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-t-lg transition-all duration-200 relative ${
+                      activeTab === "upload" 
+                        ? "bg-green-100 text-green-700 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    }`}
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="font-medium">Resume Upload</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("ats")}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-t-lg transition-all duration-200 relative ${
+                      activeTab === "ats" 
+                        ? "bg-green-100 text-green-700 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    }`}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="font-medium">ATS Analysis</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("optimize")}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-t-lg transition-all duration-200 relative ${
+                      activeTab === "optimize" 
+                        ? "bg-green-100 text-green-700 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    }`}
+                  >
+                    <Rocket className="h-4 w-4" />
+                    <span className="font-medium">Career Boost</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Tabs - Enhanced Vertical Stack */}
+            <div className="md:hidden space-y-3">
+              <button
+                onClick={() => setActiveTab("search")}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-200 ${
+                  activeTab === "search" 
+                    ? "bg-green-100 border-2 border-green-200 text-green-700 shadow-sm" 
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  activeTab === "search" ? "bg-green-200" : "bg-gray-100"
+                }`}>
+                  <SearchIcon className={`h-4 w-4 ${activeTab === "search" ? "text-green-700" : "text-gray-600"}`} />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-semibold text-base">Job Search</span>
+                  <p className="text-sm text-gray-500">Find your next opportunity</p>
+                </div>
+                {activeTab === "search" && (
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab("upload")}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-200 ${
+                  activeTab === "upload" 
+                    ? "bg-green-100 border-2 border-green-200 text-green-700 shadow-sm" 
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  activeTab === "upload" ? "bg-green-200" : "bg-gray-100"
+                }`}>
+                  <FileText className={`h-4 w-4 ${activeTab === "upload" ? "text-green-700" : "text-gray-600"}`} />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-semibold text-base">Resume Upload</span>
+                  <p className="text-sm text-gray-500">Upload and analyze your resume</p>
+                </div>
+                {activeTab === "upload" && (
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab("match")}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-200 ${
+                  activeTab === "match" 
+                    ? "bg-green-100 border-2 border-green-200 text-green-700 shadow-sm" 
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  activeTab === "match" ? "bg-green-200" : "bg-gray-100"
+                }`}>
+                  <CheckCircle2 className={`h-4 w-4 ${activeTab === "match" ? "text-green-700" : "text-gray-600"}`} />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-semibold text-base">Match Analysis</span>
+                  <p className="text-sm text-gray-500">See how well you match</p>
+                </div>
+                {activeTab === "match" && (
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab("optimize")}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-200 ${
+                  activeTab === "optimize" 
+                    ? "bg-green-100 border-2 border-green-200 text-green-700 shadow-sm" 
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  activeTab === "optimize" ? "bg-green-200" : "bg-gray-100"
+                }`}>
+                  <Sparkles className={`h-4 w-4 ${activeTab === "optimize" ? "text-green-700" : "text-gray-600"}`} />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-semibold text-base">AI Optimize</span>
+                  <p className="text-sm text-gray-500">Get AI-powered improvements</p>
+                </div>
+                {activeTab === "optimize" && (
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
+              </button>
+            </div>
+            <TabsContent value="search" id="job-search">
+              <JobSearch onJobSelect={handleJobSelect} selectedJob={selectedJob} />
+            </TabsContent>
+
+            <TabsContent value="upload">
+              <ResumeUpload onResumeUpload={handleResumeUpload} uploadedResume={uploadedResume} />
+            </TabsContent>
+
+            <TabsContent value="match">
+              <MatchDashboard resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
+            </TabsContent>
+
+            <TabsContent value="optimize">
+              <ResumeOptimizer resume={uploadedResume} selectedJob={selectedJob} resumeText={resumeText} />
+            </TabsContent>
+          </Tabs>
+        </main>
+
+        <Footer />
+      </div>
+    </>
+  );
+};
+
+export default Index;

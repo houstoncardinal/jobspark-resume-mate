@@ -12,7 +12,8 @@ import ResumeReview from "@/pages/ResumeReview";
 import Blog from "@/pages/Blog";
 import Jobs from "@/pages/Jobs";
 import Candidates from "@/pages/Candidates";
-import Fortune500Dashboard from "@/pages/Fortune500Dashboard";
+import ForEmployers from "@/pages/ForEmployers";
+import Community from "@/pages/Community";
 import Dashboard from "@/components/Dashboard";
 import SignIn from "@/pages/SignIn";
 import EmailVerificationSuccess from "@/pages/EmailVerificationSuccess";
@@ -26,40 +27,50 @@ import NotFound from "@/pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function App() {
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <Router>
-          <AnalyticsTracker />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/builder" element={<ResumeBuilderPage />} />
-            <Route path="/resume-optimizer" element={<ResumeOptimizer />} />
-            <Route path="/resume-templates" element={<ResumeTemplates />} />
-            <Route path="/resume-scanner" element={<ResumeScanner />} />
-            <Route path="/cover-letter-builder" element={<CoverLetterBuilder />} />
-            <Route path="/resume-review" element={<ResumeReview />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/jobs" element={<Jobs />} />
-            <Route path="/candidates" element={<Candidates />} />
-            <Route path="/networking" element={<NetworkingHubPage />} />
-            <Route path="/fortune500" element={<Fortune500Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/email-verified" element={<EmailVerificationSuccess />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/profile/job-seeker" element={<JobSeekerProfile />} />
-            <Route path="/profile/recruiter" element={<RecruiterProfile />} />
-            <Route path="/profile/employer" element={<EmployerProfile />} />
-            <Route path="/profile/student" element={<StudentProfile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </Router>
-      </AuthProvider>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen flex flex-col m-0 p-0">
+              <AnalyticsTracker />
+              <Header />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/builder" element={<ResumeBuilderPage />} />
+                  <Route path="/resume-optimizer" element={<ResumeOptimizer />} />
+                  <Route path="/resume-templates" element={<ResumeTemplates />} />
+                  <Route path="/resume-scanner" element={<ResumeScanner />} />
+                  <Route path="/cover-letter-builder" element={<CoverLetterBuilder />} />
+                  <Route path="/resume-review" element={<ResumeReview />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/jobs" element={<Jobs />} />
+                  <Route path="/candidates" element={<Candidates />} />
+                  <Route path="/for-employers" element={<ForEmployers />} />
+                  <Route path="/community" element={<Community />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/email-verification-success" element={<EmailVerificationSuccess />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/networking-hub" element={<NetworkingHubPage />} />
+                  <Route path="/profile/job-seeker" element={<JobSeekerProfile />} />
+                  <Route path="/profile/recruiter" element={<RecruiterProfile />} />
+                  <Route path="/profile/employer" element={<EmployerProfile />} />
+                  <Route path="/profile/student" element={<StudentProfile />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+              <Toaster />
+            </div>
+          </Router>
+        </AuthProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

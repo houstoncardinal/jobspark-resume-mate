@@ -1,4 +1,6 @@
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { 
   Search, 
   FileText, 
@@ -28,117 +30,61 @@ import {
   MapPin,
   Globe,
   Shield,
-  Award,
-  Clock,
   LogIn,
-  LogOut,
   UserPlus,
-  ArrowRight,
-  LayoutDashboard,
-  UserSearch,
-  ClipboardList,
-  Calendar,
-  LineChart,
-  Rocket,
-  LifeBuoy,
-  GraduationCap,
-  Network
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
-import { RoleSelectionModal } from "./auth/RoleSelectionModal";
-import { SignInDropdown } from "./auth/SignInDropdown";
+  MessageSquare
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { EnhancedAuthModal } from '@/components/auth/EnhancedAuthModal';
 
-export const Header = () => {
+const navigation = [
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Jobs', href: '/jobs', icon: Search },
+  { name: 'Resume Builder', href: '/builder', icon: FileText },
+  { name: 'Community', href: '/community', icon: MessageSquare },
+  { name: 'For Employers', href: '/for-employers', icon: Building2 },
+];
+
+export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
   const location = useLocation();
 
-  const navigation = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Jobs', href: '/jobs', icon: Briefcase },
-    { name: 'Resume Builder', href: '/builder', icon: FileText },
-    { name: 'Networking', href: '/networking', icon: Network },
-    { name: 'Blog', href: '/blog', icon: BookOpen },
-  ];
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
-  const isActive = (path: string) => location.pathname === path;
+  const handleRoleSelect = (role: string) => {
+    console.log('Selected role:', role);
+    // Handle role selection logic here
+  };
 
   return (
     <>
-      {/* Top Bar - White Background */}
-      <div className="bg-white border-b border-gray-200 py-2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span>AI-Powered Job Search Platform</span>
-              </div>
-              <div className="hidden md:flex items-center space-x-4 text-gray-600">
-                <div className="flex items-center space-x-1">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span>10K+ Active Users</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Briefcase className="w-4 h-4 text-blue-600" />
-                  <span>5K+ Jobs Available</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="w-4 h-4 text-blue-600" />
-                  <span>4.9/5 Rating</span>
-                </div>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-4 text-gray-600">
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-blue-600" />
-                <span>+1 (832) 996-2231</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span>support@gigm8.com</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Header - Sticky */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo - Image Only, Bigger */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto pl-2 pr-4 sm:pr-6 lg:pr-8">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo */}
+            <div className="flex items-center flex-shrink-0 -ml-2">
+              <Link to="/" className="flex items-center py-2">
                 <img 
                   src="/logo.png" 
-                  alt="Gigm8 Logo" 
-                  className="w-16 h-16 object-contain"
+                  alt="GigM8 Logo" 
+                  className="h-16 w-auto object-contain"
                 />
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex space-x-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.href)
                         ? 'bg-blue-100 text-blue-700'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -151,112 +97,68 @@ export const Header = () => {
               })}
             </nav>
 
-            {/* Right Side */}
+            {/* Right side - Auth & Mobile Menu */}
             <div className="flex items-center space-x-4">
-              {/* Search Button */}
-              <Button variant="ghost" size="sm" className="hidden md:flex">
-                <Search className="w-4 h-4" />
-              </Button>
-
-              {/* User Menu */}
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="hidden md:block text-sm font-medium">
-                        {user.user_metadata?.full_name || 'User'}
-                      </span>
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="flex items-center space-x-2">
-                        <LayoutDashboard className="w-4 h-4" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center space-x-2">
-                        <User className="w-4 h-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/settings" className="flex items-center space-x-2">
-                        <Settings className="w-4 h-4" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-red-600">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <SignInDropdown />
-                  <Button 
-                    onClick={() => setShowRoleModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <UserPlus className="w-4 w-4 mr-2" />
-                    Sign Up
-                  </Button>
-                </div>
-              )}
-
-              {/* Mobile Menu Button */}
+              {/* Auth Button */}
               <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setShowAuthModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base font-semibold transition-all duration-300"
               >
-                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <LogIn className="h-5 w-5 mr-2" />
+                Sign In/Sign Up
               </Button>
+
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2"
+                >
+                  {isMenuOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
-              <nav className="space-y-2">
+            <div className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.name}
                       to={item.href}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
                         isActive(item.href)
                           ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-5 h-5" />
                       <span>{item.name}</span>
                     </Link>
                   );
                 })}
-              </nav>
+              </div>
             </div>
           )}
         </div>
       </header>
 
-      {/* Role Selection Modal */}
-      <RoleSelectionModal 
-        isOpen={showRoleModal} 
-        onClose={() => setShowRoleModal(false)} 
+      {/* Enhanced Auth Modal */}
+      <EnhancedAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onRoleSelect={handleRoleSelect}
       />
     </>
   );

@@ -3,7 +3,7 @@ import { Building2, Crown } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 mt-10">
+    <footer className="bg-gray-50 border-t border-gray-200 mt-auto mb-0">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}

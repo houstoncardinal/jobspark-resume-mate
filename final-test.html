@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Final Website Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Final Website Test</h1>
+    <div id="status" class="status info">Testing website...</div>
+    <div id="content"></div>
+    <div id="console-errors"></div>
+    
+    <h2>Live Website Preview:</h2>
+    <iframe id="website-frame" src="http://localhost:8081"></iframe>
+
+    <script>
+        // Capture console errors
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const errors = [];
+        const warnings = [];
+
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            warnings.push(args.join(' '));
+            originalWarn.apply(console, args);
+        };
+
+        async function testWebsite() {
+            const statusDiv = document.getElementById('status');
+            const contentDiv = document.getElementById('content');
+            const consoleErrorsDiv = document.getElementById('console-errors');
+            
+            try {
+                const response = await fetch('http://localhost:8081');
+                if (response.ok) {
+                    const html = await response.text();
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Website is responding';
+                    
+                    // Check if React app is loading
+                    if (html.includes('react') || html.includes('vite')) {
+                        contentDiv.innerHTML = '✅ React app detected';
+                    } else {
+                        contentDiv.innerHTML = '⚠️ React app not detected';
+                    }
+                    
+                    // Check for specific components
+                    if (html.includes('JobSearch') || html.includes('job-search')) {
+                        contentDiv.innerHTML += '<br>✅ JobSearch component detected';
+                    }
+                    
+                    if (html.includes('Header') || html.includes('header')) {
+                        contentDiv.innerHTML += '<br>✅ Header component detected';
+                    }
+                    
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ Website error: ${response.status}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Connection error: ${error.message}`;
+            }
+            
+            // Display console errors after a delay
+            setTimeout(() => {
+                if (errors.length > 0) {
+                    consoleErrorsDiv.innerHTML = '<h3>Console Errors:</h3><pre>' + errors.join('\n') + '</pre>';
+                }
+                if (warnings.length > 0) {
+                    consoleErrorsDiv.innerHTML += '<h3>Console Warnings:</h3><pre>' + warnings.join('\n') + '</pre>';
+                }
+                if (errors.length === 0 && warnings.length === 0) {
+                    consoleErrorsDiv.innerHTML = '<h3>✅ No console errors or warnings detected!</h3>';
+                }
+            }, 3000);
+        }
+        
+        // Test iframe load
+        document.getElementById('website-frame').onload = function() {
+            document.getElementById('content').innerHTML += '<br>✅ Website loaded successfully in iframe';
+        };
+        
+        document.getElementById('website-frame').onerror = function() {
+            document.getElementById('content').innerHTML += '<br>❌ Website failed to load in iframe';
+        };
+        
+        testWebsite();
+    </script>
+</body>
+</html>

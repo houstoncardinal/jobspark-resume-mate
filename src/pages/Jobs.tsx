@@ -1,7 +1,6 @@
 /** @jsxImportSource react */
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { PAGE_SEO } from '@/lib/seo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { JobDetailModal } from '@/components/JobDetailModal';
 import { useToast } from '@/hooks/use-toast';
-import { searchAllJobs, getAvailableSources, testAPIConnections, JobListing, JobSearchParams, getCurrentLocation } from '@/lib/job-aggregator';
-import { saveJob, applyToJob, logJobSearch, getJobApplicationStats } from '@/lib/job-database';
-import { useAuth } from '@/contexts/AuthContext';
+import { searchAllJobs, getAvailableSources, testAPIConnections, JobListing, JobSearchParams } from '@/lib/job-aggregator';
 import { 
   Search, 
   MapPin, 
@@ -68,10 +65,10 @@ const JobsPage = () => {
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchParams, setSearchParams] = useState<JobSearchParams>({
-    query: '',
+    query: 'software engineer',
     location: '',
     remote: false,
-    sources: ['usajobs', 'remoteok', 'adzuna', 'jooble', 'github', 'rss'],
+    sources: ['usajobs', 'remoteok', 'rss'],
     limit: 50
   });
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
@@ -80,77 +77,21 @@ const JobsPage = () => {
   const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'salary'>('relevance');
   const [apiStatus, setApiStatus] = useState<Record<string, boolean>>({});
   const [sources, setSources] = useState(getAvailableSources());
-  const [userLocation, setUserLocation] = useState<{city: string, state: string} | null>(null);
-  const [filters, setFilters] = useState({
-    salaryMin: 0,
-    salaryMax: 200000,
-    jobType: '',
-    experience: '',
-    industry: '',
-    remoteOnly: false
-  });
-  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
-  const [applicationStats, setApplicationStats] = useState({
-    total: 0,
-    applied: 0,
-    interviews: 0,
-    offers: 0,
-    rejections: 0
-  });
-  const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load jobs on component mount and when search params change
+  // Load jobs on component mount and when search params change (with debouncing)
   useEffect(() => {
-    loadJobs();
+    const timeoutId = setTimeout(() => {
+      loadJobs();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [searchParams]);
 
   // Test API connections on mount
   useEffect(() => {
     testConnections();
   }, []);
-
-  // Get user location on mount
-  useEffect(() => {
-    getLocation();
-  }, []);
-
-  // Load user data when authenticated
-  useEffect(() => {
-    if (user) {
-      loadUserData();
-    }
-  }, [user]);
-
-  const getLocation = async () => {
-    try {
-      const location = await getCurrentLocation();
-      if (location) {
-        setUserLocation({ city: location.city, state: location.state });
-        setSearchParams(prev => ({
-          ...prev,
-          location: `${location.city}, ${location.state}`
-        }));
-        toast({
-          title: "Location detected",
-          description: `Showing jobs near ${location.city}, ${location.state}`,
-        });
-      }
-    } catch (error) {
-      console.error('Location error:', error);
-    }
-  };
-
-  const loadUserData = async () => {
-    if (!user) return;
-    
-    try {
-      const stats = await getJobApplicationStats(user.id);
-      setApplicationStats(stats);
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    }
-  };
 
   const testConnections = async () => {
     const status = await testAPIConnections();
@@ -163,27 +104,15 @@ const JobsPage = () => {
       const results = await searchAllJobs(searchParams);
       setJobs(results);
       
-      // Log search analytics
-      if (user) {
-        await logJobSearch(
-          user.id,
-          searchParams.query || '',
-          searchParams.location || '',
-          searchParams.sources || [],
-          results.length
-        );
-      }
-      
       if (results.length === 0) {
         toast({
           title: "No jobs found",
-          description: "Try adjusting your search criteria or check if API keys are configured.",
-          variant: "destructive",
+          description: "Try adjusting your search criteria or using different sources.",
         });
       } else {
         toast({
           title: `Found ${results.length} jobs`,
-          description: `Search completed successfully from ${[...new Set(results.map(job => job.source))].join(', ')}.`,
+          description: `Search completed successfully.`,
         });
       }
     } catch (error) {
@@ -199,123 +128,27 @@ const JobsPage = () => {
   };
 
   const handleSearch = (newParams: Partial<JobSearchParams>) => {
-    setSearchParams(prev => ({ ...prev, ...newParams }));
+    // Convert "any" values to undefined to clear filters
+    const processedParams = { ...newParams };
+    if (processedParams.jobType === 'any') processedParams.jobType = undefined;
+    if (processedParams.experience === 'any') processedParams.experience = undefined;
+    if (processedParams.industry === 'any') processedParams.industry = undefined;
+    
+    setSearchParams(prev => ({ ...prev, ...processedParams }));
   };
 
   const handleSourceToggle = (sourceId: string) => {
-    setSearchParams(prev => ({
-      ...prev,
-      sources: prev.sources?.includes(sourceId)
-        ? prev.sources.filter(s => s !== sourceId)
-        : [...(prev.sources || []), sourceId]
-    }));
-  };
-
-  const handleFilterChange = (filterName: string, value: any) => {
-    setFilters(prev => ({ ...prev, [filterName]: value }));
-  };
-
-  const applyFilters = () => {
-    setSearchParams(prev => ({
-      ...prev,
-      salaryMin: filters.salaryMin,
-      salaryMax: filters.salaryMax,
-      jobType: filters.jobType,
-      experience: filters.experience,
-      industry: filters.industry,
-      remote: filters.remoteOnly
-    }));
-    setShowFilters(false);
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      salaryMin: 0,
-      salaryMax: 200000,
-      jobType: '',
-      experience: '',
-      industry: '',
-      remoteOnly: false
+    setSearchParams(prev => {
+      const currentSources = prev.sources || [];
+      const newSources = currentSources.includes(sourceId)
+        ? currentSources.filter(s => s !== sourceId)
+        : [...currentSources, sourceId];
+      
+      return {
+        ...prev,
+        sources: newSources
+      };
     });
-    setSearchParams(prev => ({
-      ...prev,
-      salaryMin: undefined,
-      salaryMax: undefined,
-      jobType: undefined,
-      experience: undefined,
-      industry: undefined,
-      remote: false
-    }));
-  };
-
-  const handleSaveJob = async (job: JobListing) => {
-    if (!user) {
-      toast({
-        title: "Please sign in",
-        description: "You need to be signed in to save jobs.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const success = await saveJob(user.id, job);
-      if (success) {
-        setSavedJobs(prev => new Set([...prev, job.id]));
-        toast({
-          title: "Job saved",
-          description: "Job has been saved to your applications.",
-        });
-      } else {
-        toast({
-          title: "Error saving job",
-          description: "There was an error saving the job. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error saving job:', error);
-      toast({
-        title: "Error saving job",
-        description: "There was an error saving the job. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleApplyToJob = async (job: JobListing) => {
-    if (!user) {
-      toast({
-        title: "Please sign in",
-        description: "You need to be signed in to apply for jobs.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const success = await applyToJob(user.id, job);
-      if (success) {
-        setApplicationStats(prev => ({ ...prev, applied: prev.applied + 1, total: prev.total + 1 }));
-        toast({
-          title: "Application submitted",
-          description: "Your application has been submitted successfully.",
-        });
-      } else {
-        toast({
-          title: "Error applying",
-          description: "There was an error submitting your application. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error applying to job:', error);
-      toast({
-        title: "Error applying",
-        description: "There was an error submitting your application. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const formatSalary = (job: JobListing) => {
@@ -359,10 +192,41 @@ const JobsPage = () => {
       'Indeed': 'bg-indigo-100 text-indigo-800',
       'LinkedIn': 'bg-blue-100 text-blue-800',
       'Stack Overflow': 'bg-orange-100 text-orange-800',
-      'Mock Data': 'bg-yellow-100 text-yellow-800',
     };
     return colors[source] || 'bg-gray-100 text-gray-800';
   };
+
+  // Convert JobListing to Job for modal compatibility
+  const convertJobListingToJob = (jobListing: JobListing) => ({
+    id: jobListing.id,
+    title: jobListing.title,
+    company: jobListing.company,
+    location: jobListing.location,
+    type: (jobListing.type?.toLowerCase() as 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote') || 'full-time',
+    experienceLevel: (jobListing.experience?.toLowerCase() as 'entry' | 'mid' | 'senior' | 'executive') || 'mid',
+    salary: {
+      min: jobListing.salary?.min || 0,
+      max: jobListing.salary?.max || 0,
+      currency: jobListing.salary?.currency || 'USD',
+    },
+    description: jobListing.description || '',
+    requirements: jobListing.requirements || [],
+    benefits: jobListing.benefits || [],
+    postedAt: jobListing.posted || new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+    applications: 0,
+    views: 0,
+    rating: 4.5,
+    featured: false,
+    urgent: false,
+    remote: jobListing.remote || false,
+    visaSponsorship: false,
+    equity: false,
+    tags: jobListing.skills || [],
+    industry: jobListing.industry || 'Technology',
+    url: jobListing.url,
+    source: jobListing.source,
+  });
 
   const sortedJobs = [...jobs].sort((a, b) => {
     switch (sortBy) {
@@ -379,44 +243,30 @@ const JobsPage = () => {
 
   return (
     <>
-      <SEO {...PAGE_SEO.jobs} />
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <SEO seoData={PAGE_SEO['/jobs']} url="/jobs" />
+      <div className="bg-gray-50">
         
-        <div className="container mx-auto px-4 py-8">
-          {/* Search Header */}
-          <div className="mb-8">
+        <main className="container mx-auto px-4 py-8">
+          {/* Hero Section */}
+          <section className="mb-8">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Find Your Dream Job
+                Find Your <span className="text-blue-600">Dream Job</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-6">
-                Discover opportunities from top companies worldwide
+              <p className="text-xl text-gray-600 mb-8">
+                Search thousands of job listings from top companies and job boards worldwide
               </p>
-              {userLocation && (
-                <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Showing jobs near {userLocation.city}, {userLocation.state}
-                </div>
-              )}
-              {user && applicationStats.total > 0 && (
-                <div className="mt-4 flex justify-center gap-4 text-sm text-gray-600">
-                  <span>Applications: {applicationStats.applied}</span>
-                  <span>Interviews: {applicationStats.interviews}</span>
-                  <span>Offers: {applicationStats.offers}</span>
-                </div>
-              )}
             </div>
 
             {/* Search Bar */}
             <div className="max-w-4xl mx-auto mb-6">
-              <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
                       placeholder="Job title, keywords, or company"
-                      value={searchParams.query}
+                      value={searchParams.query || ''}
                       onChange={(e) => handleSearch({ query: e.target.value })}
                       className="pl-10 h-12 text-lg"
                     />
@@ -424,338 +274,525 @@ const JobsPage = () => {
                 </div>
                 <div className="flex-1">
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <Input
                       placeholder="City, state, or remote"
-                      value={searchParams.location}
+                      value={searchParams.location || ''}
                       onChange={(e) => handleSearch({ location: e.target.value })}
                       className="pl-10 h-12 text-lg"
                     />
                   </div>
                 </div>
                 <Button 
-                  onClick={loadJobs} 
+                  onClick={loadJobs}
                   disabled={loading}
-                  className="h-12 px-8"
+                  className="h-12 px-8 text-lg"
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                  Search
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <Search className="h-5 w-5 mr-2" />
+                  )}
+                  Search Jobs
                 </Button>
               </div>
             </div>
 
-            {/* Filter and Sort Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2"
-                >
-                  <Filter className="w-4 h-4" />
-                  Filters
-                  {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-                
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="relevance">Relevance</SelectItem>
-                    <SelectItem value="date">Date Posted</SelectItem>
-                    <SelectItem value="salary">Salary</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Clear Filters
-                </Button>
-                <Button variant="outline" size="sm" onClick={testConnections}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
+            {/* Quick Filters */}
+            <div className="flex flex-wrap justify-center gap-4 mb-6">
+              <Button
+                variant={searchParams.remote ? "default" : "outline"}
+                onClick={() => handleSearch({ remote: !searchParams.remote })}
+                className="flex items-center gap-2"
+              >
+                <Globe className="h-4 w-4" />
+                Remote Only
+              </Button>
+              <Button
+                variant="outline"
+                                      onClick={() => {
+                        setSearchParams({
+                          query: '',
+                          location: '',
+                          remote: false,
+                          jobType: 'any',
+                          experience: 'any',
+                          industry: 'any',
+                          sources: ['usajobs', 'remoteok', 'rss'],
+                          limit: 50
+                        });
+                      }}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Clear Filters
+              </Button>
+              <Button
+                variant="outline"
+                onClick={testConnections}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Test APIs
+              </Button>
             </div>
+          </section>
 
-            {/* Advanced Filters */}
-            {showFilters && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sliders className="w-5 h-5" />
-                    Advanced Filters
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* Salary Range */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Salary Range
-                      </label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            ${filters.salaryMin.toLocaleString()} - ${filters.salaryMax.toLocaleString()}
-                          </span>
-                        </div>
-                        <Slider
-                          value={[filters.salaryMin, filters.salaryMax]}
-                          onValueChange={([min, max]) => handleFilterChange('salaryMin', min) || handleFilterChange('salaryMax', max)}
-                          max={200000}
-                          step={5000}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Job Type */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Job Type
-                      </label>
-                      <Select value={filters.jobType} onValueChange={(value) => handleFilterChange('jobType', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select job type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Types</SelectItem>
-                          <SelectItem value="Full-time">Full-time</SelectItem>
-                          <SelectItem value="Part-time">Part-time</SelectItem>
-                          <SelectItem value="Contract">Contract</SelectItem>
-                          <SelectItem value="Freelance">Freelance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Experience Level */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Experience Level
-                      </label>
-                      <Select value={filters.experience} onValueChange={(value) => handleFilterChange('experience', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select experience" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Levels</SelectItem>
-                          <SelectItem value="Entry">Entry Level</SelectItem>
-                          <SelectItem value="Mid-level">Mid Level</SelectItem>
-                          <SelectItem value="Senior">Senior Level</SelectItem>
-                          <SelectItem value="Executive">Executive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Industry */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Industry
-                      </label>
-                      <Select value={filters.industry} onValueChange={(value) => handleFilterChange('industry', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select industry" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All Industries</SelectItem>
-                          <SelectItem value="Technology">Technology</SelectItem>
-                          <SelectItem value="Healthcare">Healthcare</SelectItem>
-                          <SelectItem value="Finance">Finance</SelectItem>
-                          <SelectItem value="Education">Education</SelectItem>
-                          <SelectItem value="Design">Design</SelectItem>
-                          <SelectItem value="Data Science">Data Science</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 mt-6">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="remote-only"
-                        checked={filters.remoteOnly}
-                        onCheckedChange={(checked) => handleFilterChange('remoteOnly', checked)}
-                      />
-                      <label htmlFor="remote-only" className="text-sm font-medium text-gray-700">
-                        Remote only
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 mt-6">
-                    <Button variant="outline" onClick={() => setShowFilters(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={applyFilters}>
-                      Apply Filters
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Job Sources Status */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {sources.map((source) => (
-                <div key={source.id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={source.id}
-                    checked={searchParams.sources?.includes(source.id)}
-                    onCheckedChange={() => handleSourceToggle(source.id)}
-                  />
-                  <label htmlFor={source.id} className="flex items-center gap-2 text-sm">
-                    <span className={apiStatus[source.id] ? 'text-green-600' : 'text-red-600'}>
-                      {apiStatus[source.id] ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                    </span>
-                    {source.name}
+          {/* Always-Visible Filters */}
+          <Card className="mb-8 bg-gradient-to-r from-blue-50/50 to-purple-50/50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Sliders className="h-6 w-6 text-blue-600" />
+                Job Search Filters
+              </CardTitle>
+              <CardDescription>
+                Customize your search to find the perfect opportunities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Job Sources */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Job Sources ({sources.filter(s => searchParams.sources?.includes(s.id)).length})
                   </label>
+                  <div className="relative">
+                    <Select
+                      value=""
+                      onValueChange={(value) => handleSourceToggle(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Toggle sources" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sources.map((source) => (
+                          <SelectItem key={source.id} value={source.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="flex items-center gap-2">
+                                {searchParams.sources?.includes(source.id) ? '✓ ' : '○ '}
+                                {source.name}
+                              </span>
+                              {apiStatus[source.id] !== undefined && (
+                                <span 
+                                  className={`inline-block w-2 h-2 rounded-full ml-2 ${
+                                    apiStatus[source.id] ? 'bg-green-500' : 'bg-red-500'
+                                  }`} 
+                                />
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              ))}
+
+                {/* Job Type */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Job Type
+                  </label>
+                  <Select
+                    value={searchParams.jobType || 'any'}
+                    onValueChange={(value) => handleSearch({ jobType: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any type" />
+                    </SelectTrigger>
+                                            <SelectContent>
+                          <SelectItem value="any">Any type</SelectItem>
+                          <SelectItem value="full-time">Full-time</SelectItem>
+                          <SelectItem value="part-time">Part-time</SelectItem>
+                          <SelectItem value="contract">Contract</SelectItem>
+                          <SelectItem value="internship">Internship</SelectItem>
+                          <SelectItem value="freelance">Freelance</SelectItem>
+                        </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Experience Level */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Experience
+                  </label>
+                  <Select
+                    value={searchParams.experience || 'any'}
+                    onValueChange={(value) => handleSearch({ experience: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any level" />
+                    </SelectTrigger>
+                                            <SelectContent>
+                          <SelectItem value="any">Any level</SelectItem>
+                          <SelectItem value="entry">Entry Level</SelectItem>
+                          <SelectItem value="mid">Mid Level</SelectItem>
+                          <SelectItem value="senior">Senior Level</SelectItem>
+                          <SelectItem value="executive">Executive</SelectItem>
+                        </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Industry */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Industry
+                  </label>
+                  <Select
+                    value={searchParams.industry || 'any'}
+                    onValueChange={(value) => handleSearch({ industry: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any industry" />
+                    </SelectTrigger>
+                                            <SelectContent>
+                          <SelectItem value="any">Any industry</SelectItem>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="finance">Finance</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
+                          <SelectItem value="government">Government</SelectItem>
+                          <SelectItem value="consulting">Consulting</SelectItem>
+                        </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Secondary Filters Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {/* Salary Range */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Salary Range (USD)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={searchParams.salaryMin || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleSearch({ 
+                          salaryMin: value ? parseInt(value) : undefined 
+                        });
+                      }}
+                      className="w-full"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={searchParams.salaryMax || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleSearch({ 
+                          salaryMax: value ? parseInt(value) : undefined 
+                        });
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Remote Work */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Work Type
+                  </label>
+                  <Button
+                    variant={searchParams.remote ? "default" : "outline"}
+                    onClick={() => handleSearch({ remote: !searchParams.remote })}
+                    className="w-full justify-start"
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Remote Only
+                  </Button>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Quick Actions
+                  </label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchParams({
+                          query: '',
+                          location: '',
+                          remote: false,
+                          jobType: 'any',
+                          experience: 'any',
+                          industry: 'any',
+                          sources: ['usajobs', 'remoteok', 'rss'],
+                          limit: 50
+                        });
+                      }}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                    <Button
+                      onClick={loadJobs}
+                      disabled={loading}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Search className="h-4 w-4 mr-1" />
+                      )}
+                      Search
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Filters Summary */}
+          {(searchParams.query || searchParams.location || searchParams.jobType || searchParams.experience || searchParams.industry || searchParams.remote || (searchParams.sources && searchParams.sources.length < 3)) && (
+            <div className="mb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                {searchParams.query && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Search className="h-3 w-3" />
+                    "{searchParams.query}"
+                  </Badge>
+                )}
+                {searchParams.location && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {searchParams.location}
+                  </Badge>
+                )}
+                {searchParams.jobType && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" />
+                    {searchParams.jobType}
+                  </Badge>
+                )}
+                {searchParams.experience && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Award className="h-3 w-3" />
+                    {searchParams.experience} level
+                  </Badge>
+                )}
+                {searchParams.industry && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    {searchParams.industry}
+                  </Badge>
+                )}
+                {searchParams.remote && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Globe className="h-3 w-3" />
+                    Remote only
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchParams({
+                      query: '',
+                      location: '',
+                      remote: false,
+                      sources: ['usajobs', 'remoteok', 'rss'],
+                      limit: 50
+                    });
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear all
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Results Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {loading ? 'Searching...' : `${jobs.length} Jobs Found`}
+              </h2>
+              <p className="text-gray-600">
+                {searchParams.query && `Results for "${searchParams.query}"`}
+                {searchParams.location && ` in ${searchParams.location}`}
+              </p>
+              {jobs.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {Array.from(new Set(jobs.map(job => job.source))).map(source => {
+                    const count = jobs.filter(job => job.source === source).length;
+                    return (
+                      <Badge key={source} variant="outline" className="text-xs">
+                        {source}: {count}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="date">Date Posted</SelectItem>
+                  <SelectItem value="salary">Salary</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Results */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {loading ? 'Searching...' : `${sortedJobs.length} Jobs Found`}
-              </h2>
-              <div className="text-sm text-gray-500">
-                Showing results from {[...new Set(sortedJobs.map(job => job.source))].join(', ')}
+          {/* Job Listings */}
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-gray-600">Searching for jobs...</p>
               </div>
             </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Searching for jobs...</span>
-              </div>
-            ) : sortedJobs.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs found</h3>
-                  <p className="text-gray-600 mb-4">
-                    Try adjusting your search criteria or check different job sources.
-                  </p>
-                  <Button onClick={loadJobs} variant="outline">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Try Again
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-                {sortedJobs.map((job) => (
-                  <Card key={job.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedJob(job)}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg mb-2">{job.title}</CardTitle>
-                          <CardDescription className="flex items-center gap-2 mb-2">
-                            <Building2 className="w-4 h-4" />
-                            {job.company}
-                          </CardDescription>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {job.location}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {formatDate(job.posted)}
-                            </div>
-                            {job.salary && (
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" />
-                                {formatSalary(job)}
-                              </div>
-                            )}
-                          </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <Briefcase className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
+              <p className="text-gray-500 mb-4">
+                Try adjusting your search criteria or check different job sources.
+              </p>
+              <Button onClick={loadJobs} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <div className={`grid gap-6 ${
+              viewMode === 'grid' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                : 'grid-cols-1'
+            }`}>
+              {sortedJobs.map((job) => (
+                <Card 
+                  key={job.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => setSelectedJob(job)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
+                          {job.title}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-2 text-sm text-gray-600">
+                          <Building2 className="h-4 w-4" />
+                          {job.company}
+                        </CardDescription>
+                      </div>
+                      <Badge className={getSourceColor(job.source)}>
+                        {job.source}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {job.remote ? 'Remote' : job.location}
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge className={getSourceColor(job.source)}>
-                            {job.source}
-                          </Badge>
-                          {job.remote && (
-                            <Badge variant="outline" className="text-green-600 border-green-600">
-                              Remote
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {formatDate(job.posted)}
+                        </div>
+                      </div>
+                      
+                      {job.salary && (
+                        <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
+                          <DollarSign className="h-4 w-4" />
+                          {formatSalary(job)}
+                        </div>
+                      )}
+                      
+                      {job.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {job.description.substring(0, 150)}...
+                        </p>
+                      )}
+                      
+                      {job.skills && job.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {job.skills.slice(0, 3).map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {job.skills.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{job.skills.length - 3} more
                             </Badge>
                           )}
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                        {job.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSaveJob(job);
-                            }}
-                          >
-                            <Heart className={`w-4 h-4 mr-1 ${savedJobs.has(job.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                            {savedJobs.has(job.id) ? 'Saved' : 'Save'}
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Share2 className="w-4 h-4 mr-1" />
-                            Share
-                          </Button>
-                        </div>
-                        <Button 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApplyToJob(job);
-                          }}
-                        >
-                          Apply Now
-                          <ExternalLink className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <Footer />
-
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+        
         {/* Job Detail Modal */}
         {selectedJob && (
           <JobDetailModal
-            job={selectedJob}
+            job={convertJobListingToJob(selectedJob)}
             isOpen={!!selectedJob}
             onClose={() => setSelectedJob(null)}
+            onApply={(job) => {
+              // Handle apply logic
+              window.open(job.url || '#', '_blank');
+            }}
+            onSave={(job) => {
+              // Handle save logic
+              toast({
+                title: "Job Saved",
+                description: "Job has been saved to your favorites.",
+              });
+            }}
+            onShare={(job) => {
+              // Handle share logic
+              if (navigator.share) {
+                navigator.share({
+                  title: job.title,
+                  text: `Check out this job: ${job.title} at ${job.company}`,
+                  url: job.url || window.location.href,
+                });
+              }
+            }}
           />
         )}
       </div>

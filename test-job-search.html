@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Search Test</title>
+</head>
+<body>
+    <h1>Job Search Test</h1>
+    <button onclick="testJobSearch()">Test Job Search</button>
+    <div id="results"></div>
+
+    <script>
+        async function testJobSearch() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = 'Testing job search...';
+            
+            try {
+                // Test the job search function
+                const response = await fetch('http://localhost:8081/src/lib/job-aggregator.ts');
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = '✅ Job aggregator module is accessible';
+                    
+                    // Test individual job sources
+                    await testIndividualSources();
+                } else {
+                    resultsDiv.innerHTML = '❌ Job aggregator module not accessible';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function testIndividualSources() {
+            const resultsDiv = document.getElementById('results');
+            
+            // Test RemoteOK
+            try {
+                const response = await fetch('https://api.allorigins.win/raw?url=https://remoteok.io/api');
+                const data = await response.json();
+                resultsDiv.innerHTML += `<br>✅ RemoteOK: ${data.length} jobs available`;
+            } catch (error) {
+                resultsDiv.innerHTML += `<br>❌ RemoteOK: ${error.message}`;
+            }
+            
+            // Test USAJobs
+            try {
+                const response = await fetch('https://data.usajobs.gov/api/search?Keyword=software&ResultsPerPage=5', {
+                    headers: {
+                        'Host': 'data.usajobs.gov',
+                        'User-Agent': 'Gigm8 Job Search Platform (contact@gigm8.com)',
+                        'Authorization-Key': '4Nx2nq6xUYvNNm8VZFm8rPR3M7/8j336/vLgujfroSU=',
+                    },
+                });
+                const data = await response.json();
+                const jobCount = data.SearchResult?.SearchResultItems?.length || 0;
+                resultsDiv.innerHTML += `<br>✅ USAJobs: ${jobCount} jobs found`;
+            } catch (error) {
+                resultsDiv.innerHTML += `<br>❌ USAJobs: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

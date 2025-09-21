@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Fixed Test</title>
+</head>
+<body>
+    <h1>Website Fixed Test</h1>
+    <div id="status"></div>
+    <div id="content"></div>
+    <div id="test-results"></div>
+
+    <script>
+        async function testWebsite() {
+            const statusDiv = document.getElementById('status');
+            const contentDiv = document.getElementById('content');
+            const testResultsDiv = document.getElementById('test-results');
+            
+            try {
+                const response = await fetch('http://localhost:8081');
+                if (response.ok) {
+                    const html = await response.text();
+                    statusDiv.innerHTML = '✅ Website is responding';
+                    
+                    // Check if React app is loading
+                    if (html.includes('react') || html.includes('vite')) {
+                        contentDiv.innerHTML = '✅ React app detected';
+                    } else {
+                        contentDiv.innerHTML = '⚠️ React app not detected';
+                    }
+                    
+                    // Check for error boundary
+                    if (html.includes('ErrorBoundary') || html.includes('Something went wrong')) {
+                        testResultsDiv.innerHTML = '✅ Error boundary detected';
+                    } else {
+                        testResultsDiv.innerHTML = '⚠️ Error boundary not detected';
+                    }
+                } else {
+                    statusDiv.innerHTML = `❌ Website error: ${response.status}`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Connection error: ${error.message}`;
+            }
+        }
+        
+        testWebsite();
+    </script>
+</body>
+</html>

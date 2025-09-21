@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: gigm8_postgres
+    environment:
+      POSTGRES_DB: gigm8_jobs
+      POSTGRES_USER: gigm8
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - gigm8_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gigm8 -d gigm8_jobs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: gigm8_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gigm8_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gigm8_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://gigm8:password@postgres:5432/gigm8_jobs
+      - REDIS_URL=redis://redis:6379/0
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - gigm8_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gigm8_celery_worker
+    environment:
+      - DATABASE_URL=postgresql://gigm8:password@postgres:5432/gigm8_jobs
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - gigm8_network
+    command: celery -A scheduler.celery_app worker --loglevel=info --concurrency=2
+
+  # Celery Beat Scheduler
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gigm8_celery_beat
+    environment:
+      - DATABASE_URL=postgresql://gigm8:password@postgres:5432/gigm8_jobs
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - gigm8_network
+    command: celery -A scheduler.celery_app beat --loglevel=info
+
+  # Scrapy Scraper (for manual runs)
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gigm8_scraper
+    environment:
+      - DATABASE_URL=postgresql://gigm8:password@postgres:5432/gigm8_jobs
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - gigm8_network
+    command: tail -f /dev/null  # Keep container running for manual scraping
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  gigm8_network:
+    driver: bridge
