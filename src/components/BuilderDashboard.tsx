@@ -30,8 +30,8 @@ import { cn } from '@/lib/utils';
 import { ResumeOptimizer } from '@/components/ResumeOptimizer';
 import { ResumeBuilder } from '@/components/ResumeBuilder';
 import { TemplateShowcase } from '@/components/TemplateShowcase';
-import { ResumeUpload } from '@/components/ResumeUpload';
-import CoverLetterBuilder from '@/pages/CoverLetterBuilder';
+import CoverLetterBuilderInternal from '@/components/CoverLetterBuilderInternal';
+import ATSScanner from '@/components/ATSScanner';
 
 interface Tool {
   id: string;
@@ -45,8 +45,8 @@ interface Tool {
 
 const tools: Tool[] = [
   {
-    id: 'ai-optimizer',
-    name: 'AI Resume Optimizer',
+    id: 'optimizer',
+    name: 'Resume Optimizer',
     description: 'Upload and optimize your resume with AI-powered suggestions and ATS compatibility',
     icon: Sparkles,
     category: 'optimize',
@@ -61,15 +61,6 @@ const tools: Tool[] = [
     category: 'create',
     color: 'from-purple-500 to-purple-600',
     component: ResumeBuilder
-  },
-  {
-    id: 'upload',
-    name: 'Resume Upload',
-    description: 'Upload your existing resume for analysis and optimization',
-    icon: Upload,
-    category: 'upload',
-    color: 'from-green-500 to-green-600',
-    component: ResumeUpload
   },
   {
     id: 'templates',
@@ -87,7 +78,7 @@ const tools: Tool[] = [
     icon: Mail,
     category: 'create',
     color: 'from-indigo-500 to-indigo-600',
-    component: CoverLetterBuilder
+    component: () => React.createElement(CoverLetterBuilderInternal)
   },
   {
     id: 'ats-scanner',
@@ -96,7 +87,7 @@ const tools: Tool[] = [
     icon: Eye,
     category: 'analyze',
     color: 'from-pink-500 to-pink-600',
-    component: () => <div className="p-8 text-center text-gray-500">ATS Scanner - Coming Soon</div>
+    component: ATSScanner
   }
 ];
 
@@ -163,7 +154,7 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
             // Define tool-specific colors
             const getToolColors = (toolId: string) => {
               switch(toolId) {
-                case 'ai-optimizer':
+                case 'optimizer':
                   return {
                     bg: isActive ? 'bg-blue-50' : 'hover:bg-blue-50/50',
                     text: isActive ? 'text-blue-700' : 'text-gray-700 hover:text-blue-600',
@@ -178,14 +169,6 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
                     border: isActive ? 'border-purple-200' : 'border-transparent',
                     iconBg: isActive ? 'bg-purple-100' : 'bg-purple-50 group-hover:bg-purple-100',
                     iconColor: isActive ? 'text-purple-600' : 'text-purple-500'
-                  };
-                case 'upload':
-                  return {
-                    bg: isActive ? 'bg-green-50' : 'hover:bg-green-50/50',
-                    text: isActive ? 'text-green-700' : 'text-gray-700 hover:text-green-600',
-                    border: isActive ? 'border-green-200' : 'border-transparent',
-                    iconBg: isActive ? 'bg-green-100' : 'bg-green-50 group-hover:bg-green-100',
-                    iconColor: isActive ? 'text-green-600' : 'text-green-500'
                   };
                 case 'templates':
                   return {
@@ -244,9 +227,8 @@ export const BuilderDashboard: React.FC<BuilderDashboardProps> = ({ onToolSelect
                 <div className="flex-1 min-w-0">
                   <span className="font-semibold block truncate">{tool.name}</span>
                   <p className="text-xs text-gray-500 mt-0.5 truncate">
-                    {tool.id === 'ai-optimizer' && 'AI-powered optimization'}
+                    {tool.id === 'optimizer' && 'AI-powered optimization'}
                     {tool.id === 'builder' && 'Build from scratch'}
-                    {tool.id === 'upload' && 'Upload existing resume'}
                     {tool.id === 'templates' && 'Professional templates'}
                     {tool.id === 'cover-letter' && 'Matching cover letters'}
                     {tool.id === 'ats-scanner' && 'ATS compatibility check'}
