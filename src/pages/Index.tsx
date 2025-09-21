@@ -107,7 +107,15 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'salary'>('relevance');
   const [apiStatus, setApiStatus] = useState<Record<string, boolean>>({});
-  const [sources, setSources] = useState(getAvailableSources());
+  // Fix the useState initializer to avoid hook call issues
+  const [sources, setSources] = useState(() => {
+    try {
+      return getAvailableSources();
+    } catch (error) {
+      console.error('Error getting available sources:', error);
+      return ['usajobs', 'adzuna', 'mock']; // fallback sources
+    }
+  });
   const [showJobDetails, setShowJobDetails] = useState(false);
   const [atsScore, setAtsScore] = useState<number | null>(null);
   const [atsAnalysis, setAtsAnalysis] = useState<any>(null);
