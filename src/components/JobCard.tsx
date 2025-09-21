@@ -98,9 +98,11 @@ export const JobCard = React.memo<JobCardProps>(({ job, onClick }) => {
 
           {/* Description */}
           {job.description && (
-            <p className="text-sm text-gray-600 line-clamp-3">
-              {job.description.slice(0, 150)}...
-            </p>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 line-clamp-3">
+                {job.description.replace(/<[^>]*>/g, '').slice(0, 150)}...
+              </p>
+            </div>
           )}
 
           {/* Footer */}

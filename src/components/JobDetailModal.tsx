@@ -246,9 +246,12 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {job.description}
-              </p>
+              <div 
+                className="text-gray-700 leading-relaxed whitespace-pre-line prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: job.description.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                }}
+              />
             </CardContent>
           </Card>
 

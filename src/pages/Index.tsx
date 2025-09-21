@@ -4,7 +4,7 @@ import { PAGE_SEO } from '@/lib/seo';
 import { ResumeUpload } from '@/components/ResumeUpload';
 import { ResumeBuilder } from '@/components/ResumeBuilder';
 import { ResumeOptimizer } from '@/components/ResumeOptimizer';
-import { useToast } from '@/hooks/use-toast';
+import { LocationAutocomplete } from '@/components/LocationAutocomplete';
 import { searchAllJobs, getAvailableSources, testAPIConnections, JobListing, JobSearchParams } from '@/lib/job-aggregator';
 import { JobCard } from "@/components/JobCard";
 import { JobSkeletonGrid } from "@/components/ui/job-skeleton";
@@ -602,17 +602,17 @@ const Index = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {sources.map((source) => (
-                                    <SelectItem key={source.id} value={source.id}>
+                                    <SelectItem key={sourceKey} value={sourceKey}>
                                       <div className="flex items-center justify-between w-full">
-                                        <span className="flex items-center gap-2">
-                                          {searchParams.sources?.includes(source.id) ? '✓ ' : '○ '}
-                                          {source.name}
-                                        </span>
-                                        {apiStatus[source.id] !== undefined && (
+                                <span className="flex items-center gap-2">
+                                  {isEnabled ? '✓ ' : '○ '}
+                                  {typeof source === 'string' ? source : source.name}
+                                </span>
+                                        {apiStatus && apiStatus[sourceKey] !== undefined && (
                                           <span 
-                                            className={`inline-block w-2 h-2 rounded-full ml-2 ${
-                                              apiStatus[source.id] ? 'bg-green-500' : 'bg-red-500'
-                                            }`} 
+                                    className={`inline-block w-2 h-2 rounded-full ml-2 ${
+                                      apiStatus[sourceKey] ? 'bg-green-500' : 'bg-red-500'
+                                    }`}
                                           />
                                         )}
                                       </div>

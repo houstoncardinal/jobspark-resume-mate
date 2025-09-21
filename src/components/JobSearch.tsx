@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Briefcase, Clock, DollarSign, Building2, Star, Filter, SortAsc, Grid, List, Heart, Share2, ExternalLink, Globe, Users, Calendar, Bookmark, Eye, ArrowRight, ChevronDown, X, Plus, Minus, Check, AlertCircle, Info, Zap, Target, TrendingUp, Award, Shield, Sparkles, Crown, Diamond, Flame, Rocket, Star as StarIcon, CheckCircle, AlertTriangle, RefreshCw, Download, Upload, Settings, Bell, User, LogOut, Menu, X as XIcon } from 'lucide-react';
 import { searchAllJobs, getAvailableSources, testAPIConnections } from '@/lib/job-aggregator';
+import { LocationAutocomplete } from '@/components/LocationAutocomplete';
 import { useToast } from '@/hooks/use-toast';
 
 interface JobSearchProps {
@@ -23,42 +24,19 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
   ]);
   const { toast } = useToast();
 
-  // Test API connections on mount
+  // Test API connections and load initial jobs
   useEffect(() => {
-    testConnections();
-    // Load initial jobs
+    testAPIConnections().then(status => {
+      setApiStatus(status);
+      console.log('🔍 API Status Check:', status);
+    });
     handleSearch();
   }, []);
 
-  const testConnections = async () => {
-    try {
-      const status = await testAPIConnections();
-      setApiStatus(status);
-      console.log('🔍 API Status Check:', status);
-      
-      // Show which APIs are working
-      const activeAPIs = Object.entries(status).filter(([_, isActive]) => isActive).map(([name]) => name.toUpperCase());
-      const inactiveAPIs = Object.entries(status).filter(([_, isActive]) => !isActive).map(([name]) => name.toUpperCase());
-      
-      if (activeAPIs.length > 0) {
-        toast({
-          title: `${activeAPIs.length} APIs Connected! 🚀`,
-          description: `Active: ${activeAPIs.join(', ')}`,
-        });
-      }
-      
-      if (inactiveAPIs.length > 0) {
-        console.warn('⚠️ Inactive APIs:', inactiveAPIs);
-      }
-    } catch (error) {
-      console.error('Error testing API connections:', error);
-      toast({
-        title: "API Connection Issue",
-        description: "Some APIs may not be responding. Using available sources.",
-        variant: "destructive"
-      });
-    }
-  };
+  // Load initial jobs automatically
+  useEffect(() => {
+    handleSearch();
+  }, []);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -78,8 +56,8 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
-          query: searchQuery || 'software engineer',
-          location: location,
+          query: searchQuery || '',
+          location: location || '',
           sources: enabledSources,
           limit: 50,
           aiEnhanced: true,
@@ -142,8 +120,8 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
       // Fallback to local job aggregator
       try {
         const fallbackResults = await searchAllJobs({
-          query: searchQuery || 'software engineer',
-          location: location,
+          query: searchQuery || '',
+          location: location || '',
           limit: 50,
           sources: enabledSources
         });
@@ -192,12 +170,11 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
               className="flex-1"
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <Input
-              placeholder="Location"
+            <LocationAutocomplete
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={setLocation}
+              placeholder="City, state, or remote"
               className="w-48"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
             <Button onClick={handleSearch} disabled={loading} className="bg-primary hover:bg-primary/90">
               <Search className="h-4 w-4 mr-2" />
@@ -212,7 +189,12 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={testConnections}
+                onClick={() => {
+                  testAPIConnections().then(status => {
+                    setApiStatus(status);
+                    console.log('🔍 API Status Check:', status);
+                  });
+                }}
                 className="flex items-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />

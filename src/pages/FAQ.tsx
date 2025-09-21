@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { setSeo, injectJsonLd } from "@/lib/seo";
+import { SEO } from '@/components/SEO';
+import { PAGE_SEO } from '@/lib/seo';
+import { useToast } from '@/hooks/use-toast';
 
 const faqs = [
   {
@@ -30,46 +32,33 @@ const faqs = [
 ];
 
 const FAQ = () => {
-  useEffect(() => {
-    setSeo({
-      title: "FAQ — Gigm8",
-      description: "Frequently asked questions about job sources, match analysis, and the AI resume builder.",
-      canonical: "https://jobspark.app/faq",
-    });
-    const jsonLd = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": faqs.map(f => ({
-        "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a },
-      })),
-    } as any;
-    injectJsonLd('jsonld-faq', jsonLd);
-  }, []);
+  const { toast } = useToast();
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
-          <p className="text-muted-foreground">Everything you need to know about Gigm8</p>
-        </div>
-        <div className="grid gap-4">
-          {faqs.map((f, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <CardTitle className="text-base">{f.q}</CardTitle>
-                <CardDescription>
-                  <span className="text-foreground">{f.a}</span>
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </main>
-    </div>
+    <>
+      <SEO seoData={PAGE_SEO['/faq']} url="/faq" />
+      <div className="min-h-screen bg-background">
+        <main className="container mx-auto px-4 py-8 space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
+            <p className="text-muted-foreground">Everything you need to know about Gigm8</p>
+          </div>
+          <div className="grid gap-4">
+            {faqs.map((f, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <CardTitle className="text-base">{f.q}</CardTitle>
+                  <CardDescription>
+                    <span className="text-foreground">{f.a}</span>
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </main>
+      </div>
+    </>
   );
 };
 
-export default FAQ; 
+export default FAQ;
