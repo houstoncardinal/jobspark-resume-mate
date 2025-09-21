@@ -47,7 +47,7 @@ export function setSeo({ title, description, canonical }: { title?: string; desc
 
 // Page-specific SEO data
 export const PAGE_SEO = {
-  home: {
+  '/': {
     title: 'Gigm8 — Find Jobs, Match & Optimize Your Resume',
     description: 'Search high-quality job listings worldwide, analyze your resume against any role, and use AI to optimize your resume in real time.',
     keywords: 'jobs, job search, resume optimizer, ATS, AI resume, job board, career, hiring, remote jobs',
@@ -223,6 +223,46 @@ export const PAGE_SEO = {
     'twitter:card': 'summary_large_image',
     'twitter:title': 'Career Blog - Job Search Tips & Career Advice | Gigm8',
     'twitter:description': 'Expert career advice, job search tips, and industry insights to help you advance your career and land your dream job.',
+    'twitter:image': 'https://gigm8.com/thumbnail-og.png',
+    'twitter:site': '@gigm8',
+    'twitter:creator': '@gigm8'
+  },
+  '/networking': {
+    title: 'Networking Hub - Connect with Professionals | Gigm8',
+    description: 'Join our professional networking community. Connect with industry experts, share insights, and advance your career.',
+    keywords: 'professional networking, career connections, industry experts, networking hub',
+    canonical: 'https://gigm8.com/networking',
+    robots: 'index, follow',
+    author: 'Gigm8',
+    'og:title': 'Networking Hub - Connect with Professionals | Gigm8',
+    'og:description': 'Join our professional networking community. Connect with industry experts, share insights, and advance your career.',
+    'og:image': 'https://gigm8.com/thumbnail-og.png',
+    'og:url': 'https://gigm8.com/networking',
+    'og:type': 'website',
+    'og:site_name': 'Gigm8',
+    'twitter:card': 'summary_large_image',
+    'twitter:title': 'Networking Hub - Connect with Professionals | Gigm8',
+    'twitter:description': 'Join our professional networking community. Connect with industry experts, share insights, and advance your career.',
+    'twitter:image': 'https://gigm8.com/thumbnail-og.png',
+    'twitter:site': '@gigm8',
+    'twitter:creator': '@gigm8'
+  },
+  '/signin': {
+    title: 'Sign In - Gigm8 Account Access | Gigm8',
+    description: 'Sign in to your Gigm8 account to access job search tools, resume builder, and career resources.',
+    keywords: 'sign in, login, account access, Gigm8 login',
+    canonical: 'https://gigm8.com/signin',
+    robots: 'index, follow',
+    author: 'Gigm8',
+    'og:title': 'Sign In - Gigm8 Account Access | Gigm8',
+    'og:description': 'Sign in to your Gigm8 account to access job search tools, resume builder, and career resources.',
+    'og:image': 'https://gigm8.com/thumbnail-og.png',
+    'og:url': 'https://gigm8.com/signin',
+    'og:type': 'website',
+    'og:site_name': 'Gigm8',
+    'twitter:card': 'summary_large_image',
+    'twitter:title': 'Sign In - Gigm8 Account Access | Gigm8',
+    'twitter:description': 'Sign in to your Gigm8 account to access job search tools, resume builder, and career resources.',
     'twitter:image': 'https://gigm8.com/thumbnail-og.png',
     'twitter:site': '@gigm8',
     'twitter:creator': '@gigm8'

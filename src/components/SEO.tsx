@@ -8,6 +8,12 @@ interface SEOProps {
 }
 
 export const SEO: React.FC<SEOProps> = ({ seoData, url = '' }) => {
+  // Add error handling for undefined seoData
+  if (!seoData) {
+    console.error('SEO component received undefined seoData');
+    return null;
+  }
+
   const metaTags = generateMetaTags(seoData);
 
   useEffect(() => {
