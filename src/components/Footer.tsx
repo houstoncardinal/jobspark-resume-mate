@@ -34,15 +34,15 @@ export const Footer = () => {
               <Link to="/builder" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Resume Builder
               </Link>
-              <a href="/#upload" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Resume Upload
-              </a>
-              <a href="/#match" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              </Link>
+              <Link to="/" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Match Analysis
-              </a>
-              <a href="/#optimize" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              </Link>
+              <Link to="/" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 AI Optimizer
-              </a>
+              </Link>
               <Link to="/applied" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Applied Jobs
               </Link>
@@ -59,12 +59,12 @@ export const Footer = () => {
               <Link to="/faq" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 FAQ
               </Link>
-              <a href="#help" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/faq" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Help Center
-              </a>
-              <a href="#filters" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              </Link>
+              <Link to="/jobs" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Job Filters
-              </a>
+              </Link>
             </nav>
           </div>
 
@@ -79,15 +79,15 @@ export const Footer = () => {
                 <Crown className="h-4 w-4" />
                 GigM8 For Businesses
               </Link>
-              <a href="/fortune500#revenue" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/fortune500" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Revenue Analytics
-              </a>
-              <a href="/fortune500#viral" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              </Link>
+              <Link to="/fortune500" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 Growth Strategy
-              </a>
-              <a href="/fortune500#ai" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              </Link>
+              <Link to="/fortune500" className="block text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 AI Power Suite
-              </a>
+              </Link>
             </nav>
           </div>
         </div>
@@ -99,9 +99,9 @@ export const Footer = () => {
               © {new Date().getFullYear()} Gigm8. All rights reserved.
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-600">
-              <a href="#" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-blue-600 transition-colors">Cookie Policy</a>
+              <Link to="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link>
+              <Link to="/cookies" className="hover:text-blue-600 transition-colors">Cookie Policy</Link>
             </div>
           </div>
         </div>

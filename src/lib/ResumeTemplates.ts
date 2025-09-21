@@ -59,7 +59,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
           phone: {
             label: 'Phone Number',
             type: 'phone',
-            placeholder: '(555) 123-4567',
+            placeholder: '(832) 996-2231',
             required: true
           },
           location: {
@@ -185,7 +185,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
           phone: {
             label: 'Phone',
             type: 'phone',
-            placeholder: '(555) 123-4567',
+            placeholder: '(832) 996-2231',
             required: true
           },
           location: {
@@ -453,7 +453,7 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
           phone: {
             label: 'Phone',
             type: 'phone',
-            placeholder: '(555) 123-4567',
+            placeholder: '(832) 996-2231',
             required: true
           },
           location: {

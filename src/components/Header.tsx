@@ -104,7 +104,7 @@ export const Header = () => {
             <div className="hidden md:flex items-center space-x-4 text-gray-600">
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-blue-600" />
-                <span>+1 (555) 123-4567</span>
+                <span>+1 (832) 996-2231</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-blue-600" />

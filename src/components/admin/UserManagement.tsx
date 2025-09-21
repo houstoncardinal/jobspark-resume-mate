@@ -61,7 +61,7 @@ const mockUsers: User[] = [
     createdAt: '2024-01-15',
     lastLogin: '2024-12-01',
     location: 'New York, NY',
-    phone: '+1 (555) 123-4567',
+    phone: '+1 (832) 996-2231',
     profileComplete: true,
     verified: true,
     jobApplications: 12,
