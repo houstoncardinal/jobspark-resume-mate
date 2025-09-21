@@ -101,10 +101,7 @@ const SignIn = () => {
         });
         navigate('/dashboard');
       } else {
-        await signUp(email, password, {
-          role: roleParam,
-          full_name: email.split('@')[0]
-        });
+        await signUp(email, password, roleParam);
         toast({
           title: "Account Created!",
           description: "Please check your email to verify your account.",

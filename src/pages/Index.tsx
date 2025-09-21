@@ -12,6 +12,7 @@ import { JobDetailModal } from '@/components/JobDetailModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -591,7 +592,7 @@ const Index = () => {
 
                           {/* Job Sources */}
                           <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Sources ({sources.filter(s => searchParams.sources?.includes(s.id)).length})</label>
+                            <label className="block text-sm font-medium text-gray-700">Sources ({sources.filter(s => typeof s === 'string' ? searchParams.sources?.includes(s) : searchParams.sources?.includes(s.id)).length})</label>
                             <div className="relative">
                               <Select
                                 value=""
@@ -601,23 +602,29 @@ const Index = () => {
                                   <SelectValue placeholder="Toggle sources" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {sources.map((source) => (
-                                    <SelectItem key={sourceKey} value={sourceKey}>
-                                      <div className="flex items-center justify-between w-full">
-                                <span className="flex items-center gap-2">
-                                  {isEnabled ? '✓ ' : '○ '}
-                                  {typeof source === 'string' ? source : source.name}
-                                </span>
-                                        {apiStatus && apiStatus[sourceKey] !== undefined && (
-                                          <span 
-                                    className={`inline-block w-2 h-2 rounded-full ml-2 ${
-                                      apiStatus[sourceKey] ? 'bg-green-500' : 'bg-red-500'
-                                    }`}
-                                          />
-                                        )}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
+                                  {sources.map((source) => {
+                                    const sourceKey = typeof source === 'string' ? source : source.id;
+                                    const sourceName = typeof source === 'string' ? source : source.name;
+                                    const isEnabled = searchParams.sources?.includes(sourceKey) || false;
+                                    
+                                    return (
+                                      <SelectItem key={sourceKey} value={sourceKey}>
+                                        <div className="flex items-center justify-between w-full">
+                                          <span className="flex items-center gap-2">
+                                            {isEnabled ? '✓ ' : '○ '}
+                                            {sourceName}
+                                          </span>
+                                          {apiStatus && apiStatus[sourceKey] !== undefined && (
+                                            <span 
+                                              className={`inline-block w-2 h-2 rounded-full ml-2 ${
+                                                apiStatus[sourceKey] ? 'bg-green-500' : 'bg-red-500'
+                                              }`}
+                                            />
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    );
+                                  })}
                                 </SelectContent>
                               </Select>
                             </div>
