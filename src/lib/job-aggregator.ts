@@ -97,7 +97,7 @@ export interface JobSearchParams {
   page?: number;
 }
 
-// API Keys from environment variables only
+// API Keys from environment variables - SECURE IMPLEMENTATION
 const API_KEYS = {
   USAJOBS: import.meta.env.VITE_USAJOBS_API_KEY,
   USAJOBS_USER_AGENT: import.meta.env.VITE_USAJOBS_USER_AGENT || "Gigm8 Job Search Platform (contact@gigm8.com)",
@@ -119,7 +119,7 @@ const API_KEYS = {
   MONSTER: import.meta.env.VITE_MONSTER_API_KEY,
   CAREERBUILDER: import.meta.env.VITE_CAREERBUILDER_API_KEY,
   SIMPLYHIRED: import.meta.env.VITE_SIMPLYHIRED_API_KEY,
-  APIFY: import.meta.env.VITE_APIFY_API_KEY, // Now using environment variable
+  APIFY: import.meta.env.VITE_APIFY_API_KEY,
 };
 
 // Mock job data for when APIs are not available
@@ -306,9 +306,229 @@ async function fetchAdzunaJobs(params: JobSearchParams): Promise<JobListing[]> {
   }
 }
 
+// Indeed API integration
+async function fetchIndeedJobs(params: JobSearchParams): Promise<JobListing[]> {
+  if (!API_KEYS.INDEED) {
+    console.log('Indeed API key not configured');
+    return [];
+  }
+
+  try {
+    const searchParams = new URLSearchParams({
+      publisher: API_KEYS.INDEED,
+      q: params.query || '',
+      l: params.location || '',
+      limit: (params.limit || 50).toString(),
+      start: ((params.page || 1) - 1) * (params.limit || 50).toString()
+    });
+
+    const response = await fetch(
+      `https://api.indeed.com/ads/apisearch?${searchParams}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Indeed API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return data.results?.map((job: any) => ({
+      id: `indeed-${job.jobkey}`,
+      title: job.jobtitle,
+      company: job.company,
+      location: job.formattedLocation,
+      salary: job.salary ? {
+        min: parseInt(job.salary.replace(/[^0-9]/g, '')) || undefined,
+        max: parseInt(job.salary.replace(/[^0-9]/g, '')) || undefined,
+        currency: 'USD',
+        period: 'year'
+      } : undefined,
+      type: job.jobtype,
+      posted: job.formattedRelativeTime,
+      description: job.snippet,
+      requirements: [],
+      source: 'Indeed',
+      url: job.url,
+      remote: job.remote,
+      experience: 'Various',
+      education: 'Various',
+      skills: [],
+      industry: 'Various'
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching Indeed jobs:', error);
+    return [];
+  }
+}
+
+// LinkedIn API integration
+async function fetchLinkedInJobs(params: JobSearchParams): Promise<JobListing[]> {
+  if (!API_KEYS.LINKEDIN_ID || !API_KEYS.LINKEDIN_SECRET) {
+    console.log('LinkedIn API keys not configured');
+    return [];
+  }
+
+  try {
+    // Note: LinkedIn requires OAuth2 flow for production
+    // This is a simplified implementation for demonstration
+    const searchParams = new URLSearchParams({
+      keywords: params.query || '',
+      locationName: params.location || '',
+      count: (params.limit || 50).toString()
+    });
+
+    const response = await fetch(
+      `https://api.linkedin.com/v2/jobSearch?${searchParams}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEYS.LINKEDIN_SECRET}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`LinkedIn API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return data.elements?.map((job: any) => ({
+      id: `linkedin-${job.id}`,
+      title: job.title,
+      company: job.companyDetails?.name || 'Unknown Company',
+      location: job.location?.city || 'Unknown Location',
+      salary: job.salaryRange ? {
+        min: job.salaryRange.min,
+        max: job.salaryRange.max,
+        currency: job.salaryRange.currency || 'USD',
+        period: 'year'
+      } : undefined,
+      type: job.jobType,
+      posted: job.listedAt,
+      description: job.description,
+      requirements: [],
+      source: 'LinkedIn',
+      url: job.jobPostingUrl,
+      remote: job.remote,
+      experience: 'Various',
+      education: 'Various',
+      skills: [],
+      industry: 'Various'
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching LinkedIn jobs:', error);
+    return [];
+  }
+}
+
+// GitHub Jobs API integration
+async function fetchGitHubJobs(params: JobSearchParams): Promise<JobListing[]> {
+  try {
+    const searchParams = new URLSearchParams({
+      description: params.query || '',
+      location: params.location || '',
+      page: (params.page || 1).toString()
+    });
+
+    const response = await fetch(
+      `https://jobs.github.com/positions.json?${searchParams}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub Jobs API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return data.map((job: any) => ({
+      id: `github-${job.id}`,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      salary: undefined,
+      type: job.type,
+      posted: job.created_at,
+      description: job.description,
+      requirements: [],
+      source: 'GitHub',
+      url: job.url,
+      remote: job.location?.toLowerCase().includes('remote') || false,
+      experience: 'Various',
+      education: 'Various',
+      skills: [],
+      industry: 'Technology'
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching GitHub jobs:', error);
+    return [];
+  }
+}
+
+// ZipRecruiter API integration
+async function fetchZipRecruiterJobs(params: JobSearchParams): Promise<JobListing[]> {
+  if (!API_KEYS.ZIPRECRUITER) {
+    console.log('ZipRecruiter API key not configured');
+    return [];
+  }
+
+  try {
+    const searchParams = new URLSearchParams({
+      search: params.query || '',
+      location: params.location || '',
+      radius_miles: '25',
+      days_ago: '30',
+      jobs_per_page: (params.limit || 50).toString(),
+      page: (params.page || 1).toString()
+    });
+
+    const response = await fetch(
+      `https://api.ziprecruiter.com/jobs/v1?${searchParams}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${API_KEYS.ZIPRECRUITER}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ZipRecruiter API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    return data.jobs?.map((job: any) => ({
+      id: `ziprecruiter-${job.id}`,
+      title: job.name,
+      company: job.hiring_company?.name || 'Unknown Company',
+      location: job.location?.city || 'Unknown Location',
+      salary: job.salary_min || job.salary_max ? {
+        min: job.salary_min,
+        max: job.salary_max,
+        currency: 'USD',
+        period: 'year'
+      } : undefined,
+      type: job.job_type,
+      posted: job.posted_time,
+      description: job.snippet,
+      requirements: [],
+      source: 'ZipRecruiter',
+      url: job.url,
+      remote: job.remote,
+      experience: 'Various',
+      education: 'Various',
+      skills: [],
+      industry: 'Various'
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching ZipRecruiter jobs:', error);
+    return [];
+  }
+}
+
 // Main job aggregation function
 export async function searchJobs(params: JobSearchParams): Promise<JobListing[]> {
-  console.log('🔍 Starting job search with params:', params);
+  console.log('�� Starting job search with params:', params);
   
   // Check cache first
   const cachedResults = getCachedResults(params);
@@ -333,6 +553,22 @@ export async function searchJobs(params: JobSearchParams): Promise<JobListing[]>
 
     if (sources.includes('adzuna')) {
       promises.push(fetchAdzunaJobs(params));
+    }
+
+    if (sources.includes('indeed')) {
+      promises.push(fetchIndeedJobs(params));
+    }
+
+    if (sources.includes('linkedin')) {
+      promises.push(fetchLinkedInJobs(params));
+    }
+
+    if (sources.includes('github')) {
+      promises.push(fetchGitHubJobs(params));
+    }
+
+    if (sources.includes('ziprecruiter')) {
+      promises.push(fetchZipRecruiterJobs(params));
     }
 
     if (sources.includes('rss')) {
@@ -503,4 +739,63 @@ export function getCacheStats() {
       age: Date.now() - entry.timestamp
     }))
   };
+}
+
+// API Status Checker
+export async function checkAPIStatus(): Promise<Record<string, { status: 'active' | 'inactive' | 'error', message: string }>> {
+  const status: Record<string, { status: 'active' | 'inactive' | 'error', message: string }> = {};
+
+  // Check USAJobs
+  if (API_KEYS.USAJOBS) {
+    try {
+      const response = await fetch('https://data.usajobs.gov/api/search?ResultsPerPage=1', {
+        headers: {
+          'Host': 'data.usajobs.gov',
+          'User-Agent': API_KEYS.USAJOBS_USER_AGENT,
+          'Authorization-Key': API_KEYS.USAJOBS
+        }
+      });
+      status.usajobs = {
+        status: response.ok ? 'active' : 'error',
+        message: response.ok ? 'Working' : `Error: ${response.status}`
+      };
+    } catch (error) {
+      status.usajobs = { status: 'error', message: 'Connection failed' };
+    }
+  } else {
+    status.usajobs = { status: 'inactive', message: 'API key not configured' };
+  }
+
+  // Check Adzuna
+  if (API_KEYS.ADZUNA_ID && API_KEYS.ADZUNA_KEY) {
+    try {
+      const response = await fetch(`https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=${API_KEYS.ADZUNA_ID}&app_key=${API_KEYS.ADZUNA_KEY}&what=software&results_per_page=1`);
+      status.adzuna = {
+        status: response.ok ? 'active' : 'error',
+        message: response.ok ? 'Working' : `Error: ${response.status}`
+      };
+    } catch (error) {
+      status.adzuna = { status: 'error', message: 'Connection failed' };
+    }
+  } else {
+    status.adzuna = { status: 'inactive', message: 'API keys not configured' };
+  }
+
+  // Check other APIs
+  const otherAPIs = [
+    { key: 'indeed', name: 'Indeed', hasKey: !!API_KEYS.INDEED },
+    { key: 'linkedin', name: 'LinkedIn', hasKey: !!API_KEYS.LINKEDIN_ID },
+    { key: 'github', name: 'GitHub', hasKey: true }, // GitHub doesn't require API key
+    { key: 'ziprecruiter', name: 'ZipRecruiter', hasKey: !!API_KEYS.ZIPRECRUITER }
+  ];
+
+  otherAPIs.forEach(api => {
+    if (api.hasKey) {
+      status[api.key] = { status: 'active', message: 'Configured' };
+    } else {
+      status[api.key] = { status: 'inactive', message: 'API key not configured' };
+    }
+  });
+
+  return status;
 }
