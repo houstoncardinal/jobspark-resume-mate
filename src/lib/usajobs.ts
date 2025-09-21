@@ -78,9 +78,6 @@ export interface USAJobsPosition {
         WhatToExpectNext: string;
         RequiredDocuments: string;
         HowToApply: string;
-        WhatToExpectNext: string;
-        RequiredDocuments: string;
-        HowToApply: string;
         JobFamily: string;
         JobCategory: Array<{
           Name: string;
@@ -94,21 +91,6 @@ export interface USAJobsPosition {
         PositionSchedule: string;
         PositionSensitivity: string;
         PositionRiskLevel: string;
-        SecurityClearance: string;
-        DrugTestRequired: string;
-        AdjudicationType: string;
-        TeleworkEligible: boolean;
-        RemoteWorkEligible: boolean;
-        Relocation: string;
-        TravelRequired: string;
-        Benefits: string;
-        BenefitsDisplayDefaultText: string;
-        BenefitsText: string;
-        OtherInformation: string;
-        KeyRequirements: string[];
-        WhatToExpectNext: string;
-        RequiredDocuments: string;
-        HowToApply: string;
       };
     };
   };

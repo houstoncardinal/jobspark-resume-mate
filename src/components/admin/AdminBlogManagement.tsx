@@ -161,7 +161,7 @@ export const AdminBlogManagement = () => {
         .replace(/[^a-z0-9 -]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
+        .replace(/^-+|-+$/g, '');
 
       const readingTime = Math.ceil(formData.content.split(' ').length / 200);
 
@@ -217,7 +217,7 @@ export const AdminBlogManagement = () => {
         .replace(/[^a-z0-9 -]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
+        .replace(/^-+|-+$/g, '');
 
       const readingTime = Math.ceil(formData.content.split(' ').length / 200);
 

@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ interface Candidate {
     currency: string;
   };
   skills: string[];
-  education: string;
+  educationLevel: string;
   availability: 'immediately' | '2weeks' | '1month' | 'flexible';
   remote: boolean;
   rating: number;
@@ -113,6 +114,7 @@ const mockCandidates: Candidate[] = [
         description: 'Led development of microservices architecture...'
       }
     ],
+    educationLevel: "Bachelor's Degree",
     education: [
       {
         institution: 'Stanford University',
@@ -134,6 +136,7 @@ const mockCandidates: Candidate[] = [
     experience: 4,
     salary: { min: 100000, max: 140000, currency: 'USD' },
     skills: ['Product Strategy', 'Agile', 'Data Analysis', 'Figma', 'SQL'],
+    educationLevel: 'MBA',
     availability: 'immediately',
     remote: false,
     rating: 4.6,

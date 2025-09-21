@@ -1,22 +1,21 @@
-// Job Database Integration
-// Handles job data persistence and retrieval from Supabase
+// Job Database Operations
+// Note: This file provides job-related database functionality
+// Currently using local storage as fallback since database tables are not yet created
 
-import { supabase } from '@/integrations/supabase/client';
 import { JobListing } from './job-aggregator';
 
 export interface SavedJob {
   id: string;
-  user_id: string;
   job_id: string;
+  user_id: string;
   job_title: string;
   company: string;
-  job_url?: string;
-  resume_name?: string;
-  applied_at: string;
-  status: 'applied' | 'interview' | 'rejected' | 'offered' | 'withdrawn';
-  notes?: string;
-  salary_offered?: number;
-  interview_date?: string;
+  location: string;
+  salary?: string;
+  status: 'saved' | 'applied' | 'interview' | 'offered' | 'rejected' | 'reviewed';
+  applied_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface JobSearchHistory {
@@ -28,25 +27,29 @@ export interface JobSearchHistory {
   searched_at: string;
 }
 
-// Save a job to user's saved jobs
+// Temporary local storage implementation until database tables are created
+const SAVED_JOBS_KEY = 'saved_jobs';
+const SEARCH_HISTORY_KEY = 'search_history';
+
+// Save a job to user's saved jobs (using localStorage for now)
 export async function saveJob(userId: string, job: JobListing): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('job_applications')
-      .insert({
-        user_id: userId,
-        job_id: job.id,
-        job_title: job.title,
-        company: job.company,
-        job_url: job.url,
-        status: 'applied'
-      });
+    const savedJobs = getSavedJobsFromStorage();
+    const newSavedJob: SavedJob = {
+      id: `saved_${Date.now()}`,
+      job_id: job.id,
+      user_id: userId,
+      job_title: job.title,
+      company: job.company,
+      location: job.location,
+      salary: job.salary ? `${job.salary.min || 0}-${job.salary.max || 0} ${job.salary.currency || 'USD'}` : undefined,
+      status: 'saved',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) {
-      console.error('Error saving job:', error);
-      return false;
-    }
-
+    savedJobs.push(newSavedJob);
+    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(savedJobs));
     return true;
   } catch (error) {
     console.error('Error saving job:', error);
@@ -54,181 +57,156 @@ export async function saveJob(userId: string, job: JobListing): Promise<boolean>
   }
 }
 
-// Get user's saved jobs
+// Get user's saved jobs (from localStorage for now)
 export async function getSavedJobs(userId: string): Promise<SavedJob[]> {
   try {
-    const { data, error } = await supabase
-      .from('job_applications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('applied_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching saved jobs:', error);
-      return [];
-    }
-
-    return data || [];
+    const savedJobs = getSavedJobsFromStorage();
+    return savedJobs.filter(job => job.user_id === userId);
   } catch (error) {
-    console.error('Error fetching saved jobs:', error);
+    console.error('Error getting saved jobs:', error);
     return [];
   }
 }
 
-// Apply to a job
-export async function applyToJob(userId: string, job: JobListing, resumeName?: string): Promise<boolean> {
+// Update job application status (using localStorage for now)
+export async function updateJobStatus(userId: string, jobId: string, status: SavedJob['status']): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('job_applications')
-      .insert({
-        user_id: userId,
-        job_id: job.id,
-        job_title: job.title,
-        company: job.company,
-        job_url: job.url,
-        resume_name: resumeName,
-        status: 'applied'
-      });
-
-    if (error) {
-      console.error('Error applying to job:', error);
-      return false;
+    const savedJobs = getSavedJobsFromStorage();
+    const jobIndex = savedJobs.findIndex(job => job.job_id === jobId && job.user_id === userId);
+    
+    if (jobIndex !== -1) {
+      savedJobs[jobIndex].status = status;
+      savedJobs[jobIndex].updated_at = new Date().toISOString();
+      
+      if (status === 'applied') {
+        savedJobs[jobIndex].applied_at = new Date().toISOString();
+      }
+      
+      localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(savedJobs));
+      return true;
     }
-
-    return true;
-  } catch (error) {
-    console.error('Error applying to job:', error);
+    
     return false;
-  }
-}
-
-// Update job application status
-export async function updateJobStatus(jobId: string, status: SavedJob['status'], notes?: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('job_applications')
-      .update({ 
-        status,
-        notes,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobId);
-
-    if (error) {
-      console.error('Error updating job status:', error);
-      return false;
-    }
-
-    return true;
   } catch (error) {
     console.error('Error updating job status:', error);
     return false;
   }
 }
 
-// Delete a job application
-export async function deleteJobApplication(jobId: string): Promise<boolean> {
+// Remove a job from saved jobs (using localStorage for now)
+export async function removeSavedJob(userId: string, jobId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('job_applications')
-      .delete()
-      .eq('id', jobId);
-
-    if (error) {
-      console.error('Error deleting job application:', error);
-      return false;
-    }
-
+    const savedJobs = getSavedJobsFromStorage();
+    const filteredJobs = savedJobs.filter(job => !(job.job_id === jobId && job.user_id === userId));
+    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(filteredJobs));
     return true;
   } catch (error) {
-    console.error('Error deleting job application:', error);
+    console.error('Error removing saved job:', error);
     return false;
   }
 }
 
-// Save search analytics
-export async function saveSearchAnalytics(
-  userId: string,
-  query: string,
-  location?: string,
-  sources?: string[],
-  resultsCount: number = 0
-): Promise<boolean> {
+// Get application stats (using localStorage for now)
+export async function getApplicationStats(userId: string): Promise<Record<string, number>> {
   try {
-    const { error } = await supabase
-      .from('search_analytics')
-      .insert({
-        user_id: userId,
-        query,
-        location,
-        sources,
-        results_count: resultsCount
-      });
+    const savedJobs = await getSavedJobs(userId);
+    const stats: Record<string, number> = {
+      saved: 0,
+      applied: 0,
+      interview: 0,
+      offered: 0,
+      rejected: 0,
+      reviewed: 0
+    };
 
-    if (error) {
-      console.error('Error saving search analytics:', error);
-      return false;
-    }
+    savedJobs.forEach(job => {
+      stats[job.status]++;
+    });
 
-    return true;
+    return stats;
   } catch (error) {
-    console.error('Error saving search analytics:', error);
-    return false;
+    console.error('Error getting application stats:', error);
+    return {};
   }
 }
 
-// Get search analytics for a user
-export async function getSearchAnalytics(userId: string): Promise<JobSearchHistory[]> {
+// Save search query to history (using localStorage for now)
+export async function saveSearchHistory(userId: string, query: string, location?: string, resultsCount: number = 0): Promise<void> {
   try {
-    const { data, error } = await supabase
-      .from('search_analytics')
-      .select('*')
-      .eq('user_id', userId)
-      .order('searched_at', { ascending: false })
-      .limit(50);
+    const history = getSearchHistoryFromStorage();
+    const searchEntry: JobSearchHistory = {
+      id: `search_${Date.now()}`,
+      user_id: userId,
+      query,
+      location,
+      results_count: resultsCount,
+      searched_at: new Date().toISOString()
+    };
 
-    if (error) {
-      console.error('Error fetching search analytics:', error);
-      return [];
-    }
-
-    return data || [];
+    history.unshift(searchEntry);
+    // Keep only last 50 searches
+    const trimmedHistory = history.slice(0, 50);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(trimmedHistory));
   } catch (error) {
-    console.error('Error fetching search analytics:', error);
+    console.error('Error saving search history:', error);
+  }
+}
+
+// Get user's search history (from localStorage for now)
+export async function getSearchHistory(userId: string): Promise<JobSearchHistory[]> {
+  try {
+    const history = getSearchHistoryFromStorage();
+    return history.filter(entry => entry.user_id === userId);
+  } catch (error) {
+    console.error('Error getting search history:', error);
     return [];
   }
 }
 
-// Get job application statistics
-export async function getJobApplicationStats(userId: string): Promise<{
-  total: number;
-  applied: number;
-  interview: number;
-  rejected: number;
-  offered: number;
-}> {
+// Helper functions for localStorage
+function getSavedJobsFromStorage(): SavedJob[] {
   try {
-    const { data, error } = await supabase
-      .from('job_applications')
-      .select('status')
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error fetching job application stats:', error);
-      return { total: 0, applied: 0, interview: 0, rejected: 0, offered: 0 };
-    }
-
-    const stats = {
-      total: data.length,
-      applied: data.filter(job => job.status === 'applied').length,
-      interview: data.filter(job => job.status === 'interview').length,
-      rejected: data.filter(job => job.status === 'rejected').length,
-      offered: data.filter(job => job.status === 'offered').length
-    };
-
-    return stats;
+    const saved = localStorage.getItem(SAVED_JOBS_KEY);
+    return saved ? JSON.parse(saved) : [];
   } catch (error) {
-    console.error('Error fetching job application stats:', error);
-    return { total: 0, applied: 0, interview: 0, rejected: 0, offered: 0 };
+    console.error('Error parsing saved jobs from storage:', error);
+    return [];
+  }
+}
+
+function getSearchHistoryFromStorage(): JobSearchHistory[] {
+  try {
+    const history = localStorage.getItem(SEARCH_HISTORY_KEY);
+    return history ? JSON.parse(history) : [];
+  } catch (error) {
+    console.error('Error parsing search history from storage:', error);
+    return [];
+  }
+}
+
+// Analytics functions (mock implementation for now)
+export async function getSearchAnalytics(timeframe: 'day' | 'week' | 'month' = 'week'): Promise<any> {
+  try {
+    // Mock analytics data until database is set up
+    return {
+      totalSearches: Math.floor(Math.random() * 1000),
+      uniqueUsers: Math.floor(Math.random() * 500),
+      topQueries: ['software engineer', 'data scientist', 'product manager'],
+      searchTrends: []
+    };
+  } catch (error) {
+    console.error('Error getting search analytics:', error);
+    return null;
+  }
+}
+
+// Check if job is saved by user
+export async function isJobSaved(userId: string, jobId: string): Promise<boolean> {
+  try {
+    const savedJobs = await getSavedJobs(userId);
+    return savedJobs.some(job => job.job_id === jobId);
+  } catch (error) {
+    console.error('Error checking if job is saved:', error);
+    return false;
   }
 }
