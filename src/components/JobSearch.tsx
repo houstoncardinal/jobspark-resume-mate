@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { JobDetailModal } from '@/components/JobDetailModal';
 import { useToast } from '@/hooks/use-toast';
+import { searchAllJobs, JobListing, JobSearchParams } from '@/lib/job-aggregator';
 import { 
   Search, 
   MapPin, 
@@ -53,7 +54,8 @@ import {
   Tag,
   Bell,
   Plus,
-  Minus
+  Minus,
+  Loader2
 } from 'lucide-react';
 
 interface Job {
@@ -170,7 +172,7 @@ const mockJobs: Job[] = [
 
 const industries = [
   'Technology', 'Healthcare', 'Finance', 'Education', 'Marketing', 
-  'Data Science', 'Design', 'Sales', 'Operations', 'Consulting'
+  'Data Science', 'Design', 'Sales', 'Operations', 'Consulting', 'Government'
 ];
 
 const popularTags = [
@@ -185,8 +187,8 @@ interface JobSearchProps {
 
 const JobSearch = ({ onJobSelect, selectedJob: propSelectedJob }: JobSearchProps) => {
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<Job[]>(mockJobs);
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(mockJobs);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -205,7 +207,8 @@ const JobSearch = ({ onJobSelect, selectedJob: propSelectedJob }: JobSearchProps
     urgent: false,
     visaSponsorship: false,
     equity: false,
-    selectedTags: [] as string[]
+    selectedTags: [] as string[],
+    government: false
   });
 
   useEffect(() => {
