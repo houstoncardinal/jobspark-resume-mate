@@ -101,27 +101,68 @@ const JobsPage = () => {
   const loadJobs = async () => {
     setLoading(true);
     try {
-      const results = await searchAllJobs(searchParams);
-      setJobs(results);
+      console.log('🚀 AI-Enhanced Job Search Started');
       
-      if (results.length === 0) {
-        toast({
-          title: "No jobs found",
-          description: "Try adjusting your search criteria or using different sources.",
-        });
+      // Use AI-enhanced job search edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-job-search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          ...searchParams,
+          aiEnhanced: true,
+          userProfile: {
+            skills: ['JavaScript', 'React', 'Node.js'], // Could be from user profile
+            experience: searchParams.experience || 'mid'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setJobs(data.jobs);
+        
+        console.log('✅ AI Job Search Results:', data.jobs.length);
+        
+        if (data.jobs.length === 0) {
+          toast({
+            title: "No jobs found",
+            description: "Try adjusting your search criteria or using different sources.",
+          });
+        } else {
+          toast({
+            title: `Found ${data.jobs.length} jobs with AI! 🤖`,
+            description: `Search completed successfully with AI enhancement.`,
+          });
+        }
       } else {
-        toast({
-          title: `Found ${results.length} jobs`,
-          description: `Search completed successfully.`,
-        });
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Error loading jobs:', error);
-      toast({
-        title: "Error loading jobs",
-        description: "There was an error fetching job listings. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Fallback to local job aggregator
+      try {
+        const results = await searchAllJobs(searchParams);
+        setJobs(results);
+        toast({
+          title: `Found ${results.length} jobs (fallback)`,
+          description: "Using fallback job search method.",
+        });
+      } catch (fallbackError) {
+        toast({
+          title: "Error loading jobs",
+          description: "There was an error fetching job listings. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

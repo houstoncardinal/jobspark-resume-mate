@@ -65,47 +65,70 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
     const startTime = Date.now();
     
     try {
-      console.log('🚀 Multi-API Job Search Started');
+      console.log('🚀 AI-Enhanced Job Search Started');
       console.log('📊 Enabled Sources:', enabledSources);
       console.log('🔍 Search Query:', searchQuery || 'all jobs');
       console.log('📍 Location:', location || 'anywhere');
       
-      const searchParams = {
-        query: searchQuery || 'software engineer',
-        location: location,
-        limit: 50,
-        sources: enabledSources
-      };
+      // Use AI-enhanced job search edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-job-search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          query: searchQuery || 'software engineer',
+          location: location,
+          sources: enabledSources,
+          limit: 50,
+          aiEnhanced: true,
+          userProfile: {
+            skills: ['JavaScript', 'React', 'Node.js'], // Could be from user profile
+            experience: 'mid'
+          }
+        })
+      });
 
-      const results = await searchAllJobs(searchParams);
-      setJobs(results);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      const loadTime = Date.now() - startTime;
-      
-      // Group results by source for detailed analytics
-      const bySource = results.reduce((acc: Record<string, number>, job) => {
-        const source = job.source || 'unknown';
-        acc[source] = (acc[source] || 0) + 1;
-        return acc;
-      }, {});
-      
-      console.log('✅ Job Search Results:');
-      console.log(`📊 Total Jobs Found: ${results.length}`);
-      console.log('🔗 Jobs by Source:', bySource);
-      console.log(`⚡ Load Time: ${loadTime}ms`);
-      
-      if (results.length === 0) {
-        toast({
-          title: "No jobs found",
-          description: "Try adjusting your search criteria or checking API connections.",
-          variant: "destructive"
-        });
+      if (data.success) {
+        setJobs(data.jobs);
+        
+        const loadTime = Date.now() - startTime;
+        
+        // Group results by source for detailed analytics
+        const bySource = data.jobs.reduce((acc: Record<string, number>, job: any) => {
+          const source = job.source || 'unknown';
+          acc[source] = (acc[source] || 0) + 1;
+          return acc;
+        }, {});
+        
+        console.log('✅ AI Job Search Results:');
+        console.log(`📊 Total Jobs Found: ${data.jobs.length}`);
+        console.log('🔗 Jobs by Source:', bySource);
+        console.log(`⚡ Load Time: ${loadTime}ms`);
+        console.log(`🤖 AI Enhanced: ${data.aiEnhanced}`);
+        
+        if (data.jobs.length === 0) {
+          toast({
+            title: "No jobs found",
+            description: "Try adjusting your search criteria or checking API connections.",
+            variant: "destructive"
+          });
+        } else {
+          const sourceCount = Object.keys(bySource).length;
+          toast({
+            title: `Found ${data.jobs.length} jobs with AI! 🤖`,
+            description: `From ${sourceCount} API sources in ${loadTime}ms`,
+          });
+        }
       } else {
-        const sourceCount = Object.keys(bySource).length;
-        toast({
-          title: `Found ${results.length} jobs! 🎉`,
-          description: `From ${sourceCount} API sources in ${loadTime}ms`,
-        });
+        throw new Error(data.error || 'Unknown error');
       }
       
     } catch (error) {
@@ -115,6 +138,19 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
         description: "Error fetching jobs from APIs. Please try again.",
         variant: "destructive"
       });
+      
+      // Fallback to local job aggregator
+      try {
+        const fallbackResults = await searchAllJobs({
+          query: searchQuery || 'software engineer',
+          location: location,
+          limit: 50,
+          sources: enabledSources
+        });
+        setJobs(fallbackResults);
+      } catch (fallbackError) {
+        console.error('Fallback search failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
