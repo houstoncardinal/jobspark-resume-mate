@@ -69,7 +69,9 @@ export class TextExtractor {
       const pdfParse = await import('pdf-parse');
       
       const arrayBuffer = await file.arrayBuffer();
-      const data = await pdfParse.default(arrayBuffer);
+      // Convert ArrayBuffer to Buffer for pdf-parse
+      const buffer = Buffer.from(arrayBuffer);  
+      const data = await pdfParse.default(buffer);
       
       if (!data.text || data.text.trim().length === 0) {
         return {

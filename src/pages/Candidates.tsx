@@ -186,7 +186,10 @@ const Candidates = () => {
     premium: false,
     skills: [] as string[]
   });
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  
+  // Mock profile data since the profile property doesn't exist in AuthContextType yet
+  const profile = { role: user?.role || 'job_seeker' };
   const { toast } = useToast();
 
   // Check if user has access to candidates

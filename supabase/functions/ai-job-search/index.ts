@@ -79,7 +79,9 @@ async function enhancedJobSearch(params: JobSearchParams): Promise<JobListing[]>
 
 async function aggregateJobs(params: JobSearchParams): Promise<JobListing[]> {
   const allJobs: JobListing[] = [];
-  const sources = params.sources || ['usajobs', 'remoteok', 'adzuna', 'linkedin', 'indeed'];
+  const sources = params.sources || ['usajobs', 'remoteok', 'adzuna', 'linkedin', 'indeed', 'github', 'ziprecruiter', 'rss'];
+  
+  console.log(`🔍 Starting aggregation from ${sources.length} sources:`, sources);
 
   const searchPromises = sources.map(source => searchJobSource(source, params));
   
@@ -87,20 +89,40 @@ async function aggregateJobs(params: JobSearchParams): Promise<JobListing[]> {
     const results = await Promise.allSettled(searchPromises);
     
     results.forEach((result, index) => {
+      const sourceName = sources[index];
       if (result.status === 'fulfilled') {
-        allJobs.push(...result.value);
-        console.log(`✅ ${sources[index]}: ${result.value.length} jobs`);
+        const jobs = result.value;
+        if (jobs.length > 0) {
+          allJobs.push(...jobs);
+          console.log(`✅ ${sourceName}: ${jobs.length} jobs found`);
+        } else {
+          console.log(`⚠️ ${sourceName}: 0 jobs found (may need API keys or different query)`);
+        }
       } else {
-        console.error(`❌ ${sources[index]} failed:`, result.reason);
+        console.error(`❌ ${sourceName} failed:`, result.reason);
       }
     });
 
-    // Remove duplicates
+    // Remove duplicates based on title + company combination
     const uniqueJobs = allJobs.filter((job, index, self) => 
-      index === self.findIndex(j => j.title === job.title && j.company === job.company)
+      index === self.findIndex(j => 
+        j.title.toLowerCase() === job.title.toLowerCase() && 
+        j.company.toLowerCase() === job.company.toLowerCase()
+      )
     );
 
-    console.log(`📊 Total unique jobs: ${uniqueJobs.length} from ${sources.length} sources`);
+    console.log(`📊 Aggregation complete:`);
+    console.log(`   Total jobs collected: ${allJobs.length}`);
+    console.log(`   Unique jobs after dedup: ${uniqueJobs.length}`);
+    console.log(`   Sources attempted: ${sources.length}`);
+    
+    // Group by source for detailed reporting
+    const bySource = allJobs.reduce((acc: Record<string, number>, job) => {
+      const source = job.source || 'unknown';
+      acc[source] = (acc[source] || 0) + 1;
+      return acc;
+    }, {});
+    console.log(`   Jobs by source:`, bySource);
     
     return uniqueJobs.slice(0, params.limit || 50);
   } catch (error) {
@@ -110,6 +132,8 @@ async function aggregateJobs(params: JobSearchParams): Promise<JobListing[]> {
 }
 
 async function searchJobSource(source: string, params: JobSearchParams): Promise<JobListing[]> {
+  console.log(`🔍 Searching ${source} with query: "${params.query || 'any'}" location: "${params.location || 'any'}"`);
+  
   switch (source) {
     case 'usajobs':
       return await searchUSAJobs(params);
@@ -121,7 +145,14 @@ async function searchJobSource(source: string, params: JobSearchParams): Promise
       return await searchLinkedIn(params);
     case 'indeed':
       return await searchIndeed(params);
+    case 'github':
+      return await searchGitHub(params);
+    case 'ziprecruiter':
+      return await searchZipRecruiter(params);
+    case 'rss':
+      return await searchRSS(params);
     default:
+      console.log(`⚠️ Unknown source: ${source}`);
       return [];
   }
 }
@@ -244,16 +275,40 @@ async function searchAdzuna(params: JobSearchParams): Promise<JobListing[]> {
   }
 }
 
-// LinkedIn API (simplified)
+// LinkedIn API (simplified - requires OAuth)
 async function searchLinkedIn(params: JobSearchParams): Promise<JobListing[]> {
-  // LinkedIn requires OAuth, so we'll return mock data for now
-  // In production, you'd implement proper OAuth flow
+  // LinkedIn API requires proper OAuth setup and approval
+  // For now, return empty but log the attempt
+  console.log('🔗 LinkedIn: API requires OAuth approval - returning empty');
   return [];
 }
 
-// Indeed API (simplified)
+// Indeed API (simplified - requires approval)
 async function searchIndeed(params: JobSearchParams): Promise<JobListing[]> {
-  // Indeed API requires approval, so we'll return mock data for now
+  // Indeed API requires approval and proper setup
+  // For now, return empty but log the attempt
+  console.log('🔗 Indeed: API requires approval - returning empty');
+  return [];
+}
+
+// GitHub Jobs API (mock implementation)
+async function searchGitHub(params: JobSearchParams): Promise<JobListing[]> {
+  // GitHub Jobs API was discontinued, but we can search GitHub issues/repos
+  console.log('🔗 GitHub: Jobs API discontinued - returning empty');
+  return [];
+}
+
+// ZipRecruiter API (mock implementation)
+async function searchZipRecruiter(params: JobSearchParams): Promise<JobListing[]> {
+  // ZipRecruiter API requires approval
+  console.log('🔗 ZipRecruiter: API requires approval - returning empty');
+  return [];
+}
+
+// RSS Jobs (mock implementation)
+async function searchRSS(params: JobSearchParams): Promise<JobListing[]> {
+  // Could implement RSS feed parsing for various job sites
+  console.log('🔗 RSS: Not implemented yet - returning empty');
   return [];
 }
 
@@ -329,20 +384,29 @@ serve(async (req) => {
   try {
     const params: JobSearchParams = await req.json();
     
-    console.log('🔍 AI Job Search Request:', {
-      query: params.query,
-      location: params.location,
-      sources: params.sources?.length || 0,
-      aiEnhanced: params.aiEnhanced
+    console.log('🔍 AI Job Search Request received:', {
+      query: params.query || 'any',
+      location: params.location || 'any',
+      sources: params.sources || [],
+      sourcesCount: params.sources?.length || 0,
+      aiEnhanced: params.aiEnhanced,
+      limit: params.limit || 50
     });
 
     const results = await enhancedJobSearch(params);
+
+    console.log('📊 Final Results Summary:', {
+      totalJobs: results.length,
+      uniqueSources: [...new Set(results.map(job => job.source))],
+      aiEnhanced: params.aiEnhanced && !!openAIApiKey
+    });
 
     return new Response(JSON.stringify({
       success: true,
       jobs: results,
       totalCount: results.length,
       aiEnhanced: params.aiEnhanced && !!openAIApiKey,
+      sourcesUsed: [...new Set(results.map(job => job.source))],
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
