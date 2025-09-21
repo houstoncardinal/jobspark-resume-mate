@@ -126,11 +126,11 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
     }
   };
 
-  const toggleSource = (source: string) => {
+  const toggleSource = (sourceId: string) => {
     setEnabledSources(prev => 
-      prev.includes(source) 
-        ? prev.filter(s => s !== source)
-        : [...prev, source]
+      prev.includes(sourceId) 
+        ? prev.filter(s => s !== sourceId)
+        : [...prev, sourceId]
     );
   };
 
@@ -185,20 +185,20 @@ const JobSearch: React.FC<JobSearchProps> = ({ onJobSelect, selectedJob }) => {
             </div>
             <div className="flex flex-wrap gap-2">
               {getAvailableSources().map(source => {
-                const isEnabled = enabledSources.includes(source);
-                const isActive = apiStatus[source] ?? false;
+                const isEnabled = enabledSources.includes(source.id);
+                const isActive = apiStatus[source.id] ?? false;
                 return (
                   <Badge 
-                    key={source} 
+                    key={source.id} 
                     variant={isActive && isEnabled ? "default" : "secondary"}
                     className={`cursor-pointer transition-colors ${
                       isActive && isEnabled ? "bg-green-500 hover:bg-green-600" : 
                       isEnabled ? "bg-blue-500 hover:bg-blue-600" : 
                       "bg-gray-400 hover:bg-gray-500"
                     }`}
-                    onClick={() => toggleSource(source)}
+                    onClick={() => toggleSource(source.id)}
                   >
-                    {source.toUpperCase()} 
+                    {source.name} 
                     {isActive ? " ✓" : " ✗"}
                     {!isEnabled && " (disabled)"}
                   </Badge>

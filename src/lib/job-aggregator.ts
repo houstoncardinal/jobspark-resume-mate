@@ -742,17 +742,16 @@ export function getCacheStats() {
 }
 
 // Get available job sources
-export function getAvailableSources(): string[] {
+export function getAvailableSources(): Array<{id: string, name: string, free: boolean, description: string}> {
   return [
-    'usajobs',
-    'adzuna', 
-    'indeed',
-    'linkedin',
-    'github',
-    'ziprecruiter',
-    'rss',
-    'remoteok',
-    'mock'
+    { id: 'usajobs', name: 'USAJobs', free: true, description: 'Government jobs' },
+    { id: 'adzuna', name: 'Adzuna', free: false, description: 'International job board' },
+    { id: 'indeed', name: 'Indeed', free: false, description: 'Popular job site' },
+    { id: 'linkedin', name: 'LinkedIn', free: false, description: 'Professional networking' },
+    { id: 'github', name: 'GitHub', free: true, description: 'Open source projects' },
+    { id: 'ziprecruiter', name: 'ZipRecruiter', free: false, description: 'Job aggregator' },
+    { id: 'rss', name: 'RSS Feeds', free: true, description: 'Company job feeds' },
+    { id: 'remoteok', name: 'RemoteOK', free: true, description: 'Remote jobs' },
   ];
 }
 

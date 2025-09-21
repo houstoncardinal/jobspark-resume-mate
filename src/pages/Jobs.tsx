@@ -68,7 +68,7 @@ const JobsPage = () => {
     query: 'software engineer',
     location: '',
     remote: false,
-    sources: ['usajobs', 'remoteok', 'rss'],
+    sources: ['usajobs', 'adzuna', 'indeed', 'linkedin', 'github', 'ziprecruiter', 'rss', 'remoteok'],
     limit: 50
   });
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
@@ -318,7 +318,7 @@ const JobsPage = () => {
                           jobType: 'any',
                           experience: 'any',
                           industry: 'any',
-                          sources: ['usajobs', 'remoteok', 'rss'],
+                  sources: ['usajobs', 'adzuna', 'indeed', 'linkedin', 'github', 'ziprecruiter', 'rss', 'remoteok'],
                           limit: 50
                         });
                       }}
